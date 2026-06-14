@@ -8,6 +8,7 @@ import { ProgressBar } from "~/components/ui/progress";
 import { PlateTile } from "~/components/ui/plate-tile";
 import { USMap } from "~/components/ui/us-map";
 import { CAMap } from "~/components/ui/ca-map";
+import { ExportPDF } from "~/components/ui/export-pdf";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Playing · Plate Game" }];
@@ -24,6 +25,7 @@ export default function PlayGame() {
   const [view, setView] = useState<ViewMode>("grid");
   const [search, setSearch] = useState("");
   const [showDelete, setShowDelete] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     const games = loadGames();
@@ -152,7 +154,15 @@ export default function PlayGame() {
           </div>
         )}
 
-        {/* Delete */}
+
+        {/* Export */}
+        <button onClick={() => setShowExport(true)}
+          className="w-full font-bold text-sm rounded-xl py-3 mb-3"
+          style={{ background: "var(--bg-card)", color: "var(--sky)", border: "1.5px solid var(--border)" }}>
+          ↓ Export to PDF
+        </button>
+
+                {/* Delete */}
         {!showDelete ? (
           <button onClick={() => setShowDelete(true)}
             className="w-full font-bold text-sm rounded-xl py-3"
@@ -173,6 +183,8 @@ export default function PlayGame() {
           </div>
         )}
       </div>
+
+      {showExport && <ExportPDF game={game} onClose={() => setShowExport(false)} />}
     </div>
   );
 }
