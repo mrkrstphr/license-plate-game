@@ -1,4 +1,3 @@
-import { cn } from "~/lib/utils";
 import type { Plate } from "~/data/plates";
 
 interface PlateTileProps {
@@ -12,20 +11,23 @@ export function PlateTile({ plate, found, onToggle }: PlateTileProps) {
     <button
       onClick={() => onToggle(plate.code)}
       title={plate.name}
-      className={cn(
-        "relative flex flex-col items-center justify-center rounded-xl border-2 p-2 cursor-pointer transition-all duration-150 min-h-14 w-full",
-        found
-          ? "border-green-400 bg-green-50 text-green-600"
-          : "border-gray-200 bg-gray-100 text-gray-400 hover:border-gray-300"
-      )}
+      className="relative flex flex-col items-center justify-center rounded-xl border-2 p-2 cursor-pointer transition-all duration-150 min-h-14 w-full"
+      style={found ? {
+        borderColor: "var(--found-border)",
+        background: "var(--found-bg)",
+      } : {
+        borderColor: "var(--plate-border)",
+        background: "var(--plate-empty)",
+      }}
     >
       {found && (
-        <span className="absolute top-1 right-1.5 text-[9px] font-black text-green-500">✓</span>
+        <span className="absolute top-1 right-1.5 text-[9px] font-black" style={{ color: "var(--found)" }}>✓</span>
       )}
-      <span className={cn("font-black text-sm tracking-wide leading-none", found ? "text-green-600" : "text-gray-400")}>
+      <span className="font-black text-sm tracking-wide leading-none" style={{ color: found ? "var(--found)" : "var(--text-muted)" }}>
         {plate.code}
       </span>
-      <span className={cn("text-[8px] font-medium mt-1 text-center leading-tight max-w-[48px] truncate", found ? "text-green-500" : "text-gray-400")}>
+      <span className="text-[8px] font-medium mt-1 text-center leading-tight max-w-[48px] truncate"
+        style={{ color: found ? "var(--found)" : "var(--text-faint)" }}>
         {plate.name}
       </span>
     </button>

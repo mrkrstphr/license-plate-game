@@ -3,10 +3,57 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --color-navy: #1B2340;
-  --color-amber-road: #F5A623;
+}
+
+/* Light mode tokens */
+:root {
+  --bg-app:      #F0F1F5;
+  --bg-card:     #FFFFFF;
+  --bg-input:    #FFFFFF;
+  --bg-muted:    #F3F4F6;
+  --bg-hero-from:#1B2340;
+  --bg-hero-to:  #252f52;
+  --border:      #E5E7EB;
+  --text-primary:#1B2340;
+  --text-muted:  #6B7280;
+  --text-faint:  #9CA3AF;
+  --navy:        #1B2340;
+  --amber:       #F5A623;
+  --sky:         #4A90D9;
+  --found:       #22C55E;
+  --found-bg:    #DCFCE7;
+  --found-border:#86EFAC;
+  --plate-empty: #E8EAF0;
+  --plate-border:#D1D5E0;
+  --map-empty:   #D1D5E0;
+}
+
+/* Dark mode tokens */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-app:      #0F1117;
+    --bg-card:     #1C1F2B;
+    --bg-input:    #252836;
+    --bg-muted:    #252836;
+    --bg-hero-from:#0a0e1a;
+    --bg-hero-to:  #131829;
+    --border:      #2E3347;
+    --text-primary:#E8EAF0;
+    --text-muted:  #8B92A8;
+    --text-faint:  #555E7A;
+    --navy:        #1B2340;
+    --amber:       #F5A623;
+    --sky:         #4A90D9;
+    --found:       #22C55E;
+    --found-bg:    #052e16;
+    --found-border:#166534;
+    --plate-empty: #252836;
+    --plate-border:#2E3347;
+    --map-empty:   #2E3347;
+  }
 }
 
 html, body {
-  @apply bg-gray-100;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
 }

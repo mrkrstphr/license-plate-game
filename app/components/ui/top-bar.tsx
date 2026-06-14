@@ -1,30 +1,24 @@
 import { Link } from "react-router";
-import { cn } from "~/lib/utils";
 
 interface TopBarProps {
-  title?: string;
   backTo?: string;
   backLabel?: string;
   action?: React.ReactNode;
 }
 
-export function TopBar({ title, backTo, backLabel = "Back", action }: TopBarProps) {
+export function TopBar({ backTo, backLabel = "Back", action }: TopBarProps) {
   return (
-    <header className="bg-[#1B2340] h-14 px-4 flex items-center justify-between sticky top-0 z-50 shadow-md">
+    <header className="h-14 px-4 flex items-center justify-between sticky top-0 z-50 shadow-md"
+      style={{ background: "var(--navy)" }}>
       <div className="flex items-center gap-3">
         {backTo ? (
-          <Link
-            to={backTo}
-            className="text-sky-400 font-bold text-sm flex items-center gap-1"
-          >
+          <Link to={backTo} className="font-bold text-sm flex items-center gap-1" style={{ color: "var(--sky)" }}>
             ← {backLabel}
           </Link>
         ) : (
-          <div className="text-white font-black text-lg tracking-tight flex items-center gap-2">
+          <div className="font-black text-lg tracking-tight flex items-center gap-2" style={{ color: "#fff" }}>
             <span>🚗</span>
-            <span>
-              Plate <span className="text-[#F5A623]">Game</span>
-            </span>
+            <span>Plate <span style={{ color: "var(--amber)" }}>Game</span></span>
           </div>
         )}
       </div>

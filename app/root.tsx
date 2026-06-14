@@ -42,20 +42,18 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;
-
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? "404" : "Error";
     details = error.status === 404 ? "That page doesn't exist." : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
+  } else if (import.meta.env.DEV && error instanceof Error) {
     details = error.message;
     stack = error.stack;
   }
-
   return (
-    <main className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
-      <div className="bg-white rounded-2xl shadow p-8 text-center max-w-sm">
-        <h1 className="text-2xl font-black mb-2">{message}</h1>
-        <p className="text-gray-400 text-sm">{details}</p>
+    <main className="min-h-screen flex items-center justify-center p-8" style={{ background: "var(--bg-app)" }}>
+      <div className="rounded-2xl shadow p-8 text-center max-w-sm" style={{ background: "var(--bg-card)" }}>
+        <h1 className="text-2xl font-black mb-2" style={{ color: "var(--text-primary)" }}>{message}</h1>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>{details}</p>
         {stack && <pre className="text-left text-xs text-red-400 mt-4 overflow-auto">{stack}</pre>}
       </div>
     </main>
