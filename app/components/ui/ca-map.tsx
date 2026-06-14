@@ -5,12 +5,12 @@ interface CAMapProps {
   found: string[];
 }
 
-// Approximate label centers in the 800x480 viewBox
+// Label positions for the Lambert projection at 800x480, Y-flipped
 const PROVINCE_LABELS: Record<string, [number, number]> = {
-  BC: [130, 240], AB: [230, 270], SK: [330, 270], MB: [420, 270],
-  ON: [520, 310], QC: [610, 240], NB: [668, 330], NS: [682, 355],
-  PE: [692, 330], NL: [680, 190], NT: [300, 150], NU: [460, 130],
-  YT: [100, 80],
+  YT: [112,  88], NT: [268, 140], NU: [468, 118],
+  BC: [118, 255], AB: [228, 272], SK: [332, 272], MB: [428, 268],
+  ON: [530, 318], QC: [618, 235], NB: [672, 330], NS: [692, 350],
+  PE: [702, 318], NL: [692, 195],
 };
 
 export function CAMap({ found }: CAMapProps) {
@@ -35,12 +35,11 @@ export function CAMap({ found }: CAMapProps) {
                 stroke="white"
                 strokeWidth={1}
                 strokeLinejoin="round"
-                style={{ transition: "fill 0.2s ease" }}
+                style={{ transition: "fill 0.25s ease" }}
               />
               {label && (
                 <text
-                  x={label[0]}
-                  y={label[1]}
+                  x={label[0]} y={label[1]}
                   fontSize={8}
                   fontWeight="700"
                   fill={isFound ? "white" : "#6B7280"}
