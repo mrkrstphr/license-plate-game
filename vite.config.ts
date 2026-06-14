@@ -3,26 +3,21 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import type { Plugin } from "vite";
 
-// Handles GitHub Pages SPA redirect: ?p=/games/xyz → actual route
+// On load, check if 404.html stashed a redirect path in sessionStorage and
+// navigate there before React Router renders anything.
 function ghPagesSpaRedirect(): Plugin {
   return {
     name: "gh-pages-spa-redirect",
     transformIndexHtml(html) {
-      const script = `
-    <script>
-      (function() {
-        var redirect = sessionStorage.redirect;
-        delete sessionStorage.redirect;
-        if (redirect && redirect !== location.href) {
-          history.replaceState(null, null, redirect);
-        }
-        // Handle ?p= param from 404.html
-        var p = new URLSearchParams(location.search).get('p');
-        if (p) {
-          history.replaceState(null, null, p || '/');
-        }
-      })();
-    </script>`;
+      const script = `<script>
+(function() {
+  var redirect = sessionStorage.getItem('spa_redirect');
+  if (redirect) {
+    sessionStorage.removeItem('spa_redirect');
+    window.history.replaceState(null, '', '/license-plate-game' + redirect);
+  }
+})();
+</script>`;
       return html.replace("<head>", "<head>" + script);
     },
   };

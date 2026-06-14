@@ -4,16 +4,13 @@
     <meta charset="utf-8" />
     <title>License Plate Game</title>
     <script>
-      // GitHub Pages SPA redirect: forward path as query param, root script picks it up
-      const path = window.location.pathname.replace('/license-plate-game', '');
-      const search = window.location.search;
-      const hash = window.location.hash;
-      const redirectUrl =
-        window.location.origin +
-        '/license-plate-game/?p=' +
-        encodeURIComponent(path + search) +
-        hash;
-      window.location.replace(redirectUrl);
+      // Store the full path in sessionStorage, then redirect to root.
+      // The app picks it up on load and navigates there.
+      var path = window.location.pathname.replace('/license-plate-game', '') || '/';
+      var search = window.location.search;
+      var hash = window.location.hash;
+      sessionStorage.setItem('spa_redirect', path + search + hash);
+      window.location.replace('/license-plate-game/');
     </script>
   </head>
   <body></body>
