@@ -1,4 +1,4 @@
-import { Link, useLoaderData, useRevalidator } from "react-router";
+import { Link } from "react-router";
 import { useEffect, useState } from "react";
 import type { Route } from "./+types/home";
 import { loadGames, formatDate, type Game } from "~/data/games";
@@ -11,11 +11,6 @@ export function meta({}: Route.MetaArgs) {
     { title: "License Plate Game" },
     { name: "description", content: "Track license plates on your road trip!" },
   ];
-}
-
-// Loader runs server-side; games are client-only so we return empty and hydrate client-side
-export async function loader() {
-  return { games: [] as Game[] };
 }
 
 export default function Home() {
