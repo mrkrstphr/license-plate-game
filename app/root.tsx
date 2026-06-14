@@ -1,3 +1,4 @@
+import "~/spa-redirect";
 import {
   isRouteErrorResponse,
   Links,
