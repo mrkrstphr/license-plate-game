@@ -18,6 +18,7 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
     setGenerating(true);
 
     const { jsPDF } = await import("jspdf");
+    const { buildUSMapImage, buildCAMapImage } = await import("~/lib/map-to-image");
 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
     const PW = 215.9;
@@ -33,6 +34,12 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
     const LGRAY = [209, 213, 224] as const;
     const BGALT = [245, 246, 248] as const;
     const WHITE = [255, 255, 255] as const;
+
+    // Pre-render maps while we start laying out
+    const [usMapImg, caMapImg] = await Promise.all([
+      includeUS ? buildUSMapImage(game.found) : Promise.resolve(null),
+      includeCA ? buildCAMapImage(game.found) : Promise.resolve(null),
+    ]);
 
     let y = M;
 
@@ -59,7 +66,7 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
     doc.text(formatDate(game.date), M, y);
     y += 12;
 
-    // Progress bars
+    // Progress bar helper
     function drawProgressBar(
       label: string,
       found: number,
@@ -69,7 +76,6 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
     ): number {
       const barH = 5;
       const pctVal = pct(found, total);
-
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(...GRAY);
@@ -77,7 +83,6 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
       doc.setTextColor(...color);
       doc.text(`${found}/${total} - ${pctVal}%`, PW - M, yPos, { align: "right" });
       yPos += 3;
-
       doc.setFillColor(...LGRAY);
       doc.roundedRect(M, yPos, CW, barH, 2, 2, "F");
       if (found > 0) {
@@ -87,6 +92,7 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
       return yPos + barH + 6;
     }
 
+    // Progress bars
     if (includeUS) {
       const usFound = game.found.filter(c => US_PLATES.some(p => p.code === c)).length;
       y = drawProgressBar("US States", usFound, US_PLATES.length, SKY, y);
@@ -96,16 +102,51 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
       y = drawProgressBar("Canada", caFound, CA_PLATES.length, AMBER, y);
     }
 
-    // Status table — 3 columns
-    const drawTable = (
+    // Map image helper
+    function drawMap(
+      imgData: string,
+      title: string,
+      accentColor: readonly [number, number, number],
+      nativeW: number,
+      nativeH: number,
+      yPos: number
+    ): number {
+      if (yPos + 20 > PH - M) { doc.addPage(); yPos = M; }
+
+      // Section heading
+      doc.setFillColor(...accentColor);
+      doc.rect(M, yPos, CW, 7, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...WHITE);
+      doc.text(title, M + 3, yPos + 5);
+      yPos += 9;
+
+      // Scale image to fit content width
+      const imgH = (nativeH / nativeW) * CW;
+      if (yPos + imgH > PH - M) { doc.addPage(); yPos = M; }
+      doc.addImage(imgData, "PNG", M, yPos, CW, imgH);
+      return yPos + imgH + 8;
+    }
+
+    y += 2;
+    if (includeUS && usMapImg) {
+      y = drawMap(usMapImg, "US States", SKY, 1520, 920, y);
+    }
+    if (includeCA && caMapImg) {
+      if (y + 10 > PH - M) { doc.addPage(); y = M; }
+      y = drawMap(caMapImg, "Canadian Provinces & Territories", AMBER, 1600, 960, y);
+    }
+
+    // 3-column status table
+    function drawTable(
       plates: typeof US_PLATES,
       title: string,
       accentColor: readonly [number, number, number],
       yStart: number
-    ): number => {
+    ): number {
       if (yStart + 20 > PH - M) { doc.addPage(); yStart = M; }
 
-      // Section heading
       doc.setFillColor(...accentColor);
       doc.rect(M, yStart, CW, 7, "F");
       doc.setFont("helvetica", "bold");
@@ -114,11 +155,9 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
       doc.text(title, M + 3, yStart + 5);
       yStart += 9;
 
-      // 3-column layout
       const numCols = 3;
       const colW = CW / numCols;
       const codeW = 14;
-      const nameW = colW - codeW - 28; // room for code + status pill
       const pillW = 20;
       const rowH = 6;
 
@@ -134,7 +173,6 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
       }
       yStart += rowH;
 
-      // Thin rule under headers
       doc.setDrawColor(...LGRAY);
       doc.setLineWidth(0.3);
       doc.line(M, yStart, M + CW, yStart);
@@ -145,7 +183,6 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
       for (let row = 0; row < rowsPerCol; row++) {
         if (yStart + rowH > PH - M) { doc.addPage(); yStart = M; }
 
-        // Alt row bg across full width
         if (row % 2 === 0) {
           doc.setFillColor(...BGALT);
           doc.rect(M, yStart, CW, rowH, "F");
@@ -158,19 +195,16 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
           const isFound = game.found.includes(plate.code);
           const xBase = M + col * colW;
 
-          // Code
           doc.setFont("helvetica", "bold");
           doc.setFontSize(7.5);
           doc.setTextColor(...NAVY);
           doc.text(plate.code, xBase + 2, yStart + 4.2);
 
-          // Name (truncate if needed)
           doc.setFont("helvetica", "normal");
           doc.setTextColor(...GRAY);
           const name = plate.name.length > 16 ? plate.name.slice(0, 15) + "." : plate.name;
           doc.text(name, xBase + codeW + 2, yStart + 4.2);
 
-          // Status pill
           const pillX = xBase + colW - pillW - 1;
           const pillH = 4;
           const pillY = yStart + (rowH - pillH) / 2;
@@ -183,7 +217,6 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
             align: "center", baseline: "middle",
           });
 
-          // Vertical divider between columns
           if (col < numCols - 1) {
             doc.setDrawColor(...LGRAY);
             doc.setLineWidth(0.2);
@@ -192,12 +225,14 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
         }
         yStart += rowH;
       }
-
       return yStart + 8;
-    };
+    }
 
-    y += 2;
-    if (includeUS) y = drawTable(US_PLATES, "US States", SKY, y);
+    if (includeUS) {
+      if (y + 20 > PH - M) { doc.addPage(); y = M; }
+      else y += 4;
+      y = drawTable(US_PLATES, "US States", SKY, y);
+    }
     if (includeCA) {
       if (y + 20 > PH - M) { doc.addPage(); y = M; }
       else y += 4;
@@ -272,7 +307,7 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
         </div>
 
         <p className="text-xs rounded-xl px-3 py-2" style={{ background: "var(--bg-muted)", color: "var(--text-muted)" }}>
-          Includes progress bars and a full status table
+          Includes map view, progress bars, and full status table
         </p>
 
         <div className="flex gap-2.5">
