@@ -13,16 +13,22 @@ import {
 import { TopBar } from "~/components/ui/top-bar";
 import { ProgressBar } from "~/components/ui/progress";
 import { PlateTile } from "~/components/ui/plate-tile";
+import { USMap } from "~/components/ui/us-map";
+import { CAMap } from "~/components/ui/ca-map";
 
 export function meta({ params }: Route.MetaArgs) {
   return [{ title: "Playing · Plate Game" }];
 }
 
+type RegionTab = "us" | "ca";
+type ViewMode = "grid" | "map";
+
 export default function PlayGame() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [game, setGame] = useState<Game | null>(null);
-  const [tab, setTab] = useState<"us" | "ca">("us");
+  const [tab, setTab] = useState<RegionTab>("us");
+  const [view, setView] = useState<ViewMode>("grid");
   const [search, setSearch] = useState("");
   const [showDelete, setShowDelete] = useState(false);
 
@@ -90,46 +96,91 @@ export default function PlayGame() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-4 pb-20">
-        {/* Tabs */}
-        <div className="grid grid-cols-2 bg-gray-100 rounded-xl p-1 mb-3.5">
-          {(["us", "ca"] as const).map((t) => (
+        {/* Region tabs + view toggle */}
+        <div className="flex items-center gap-2 mb-3.5">
+          <div className="flex-1 grid grid-cols-2 bg-gray-100 rounded-xl p-1">
+            {(["us", "ca"] as RegionTab[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => { setTab(t); setSearch(""); }}
+                className={`rounded-xl py-2.5 text-sm font-bold transition-all ${
+                  tab === t ? "bg-white shadow text-[#1B2340]" : "text-gray-400"
+                }`}
+              >
+                {t === "us" ? (
+                  <>🇺🇸 US States<br /><span className={`font-black text-base ${tab === t ? "text-sky-500" : ""}`}>{uf}/{US_PLATES.length}</span></>
+                ) : (
+                  <>🍁 Canada<br /><span className={`font-black text-base ${tab === t ? "text-amber-400" : ""}`}>{cf}/{CA_PLATES.length}</span></>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Grid / Map toggle */}
+          <div className="bg-gray-100 rounded-xl p-1 flex flex-col gap-1">
             <button
-              key={t}
-              onClick={() => { setTab(t); setSearch(""); }}
-              className={`rounded-xl py-2.5 text-sm font-bold transition-all ${
-                tab === t
-                  ? "bg-white shadow text-[#1B2340]"
-                  : "text-gray-400"
+              onClick={() => setView("grid")}
+              title="Grid view"
+              className={`w-9 h-9 rounded-lg flex items-center justify-center text-base transition-all ${
+                view === "grid" ? "bg-white shadow text-[#1B2340]" : "text-gray-400"
               }`}
             >
-              {t === "us" ? (
-                <>🇺🇸 US States<br /><span className="font-black text-base text-sky-500">{uf}/{US_PLATES.length}</span></>
-              ) : (
-                <>🍁 Canada<br /><span className="font-black text-base text-amber-400">{cf}/{CA_PLATES.length}</span></>
-              )}
+              ▦
             </button>
-          ))}
+            <button
+              onClick={() => setView("map")}
+              title="Map view"
+              className={`w-9 h-9 rounded-lg flex items-center justify-center text-base transition-all ${
+                view === "map" ? "bg-white shadow text-[#1B2340]" : "text-gray-400"
+              }`}
+            >
+              🗺
+            </button>
+          </div>
         </div>
 
-        {/* Search */}
-        <input
-          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-[15px] outline-none focus:border-sky-400 mb-3.5"
-          placeholder={`Search ${tab === "us" ? "states" : "provinces"}…`}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        {/* Map view */}
+        {view === "map" && (
+          <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+            {tab === "us" ? (
+              <>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                  🇺🇸 United States — {uf}/{US_PLATES.length} found
+                </p>
+                <USMap found={game.found} />
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                  🍁 Canada — {cf}/{CA_PLATES.length} found
+                </p>
+                <CAMap found={game.found} />
+              </>
+            )}
+          </div>
+        )}
 
-        {/* Plate grid */}
-        <div className="grid grid-cols-4 gap-2 mb-5">
-          {filtered.map((plate) => (
-            <PlateTile
-              key={plate.code}
-              plate={plate}
-              found={game.found.includes(plate.code)}
-              onToggle={updateFound}
+        {/* Grid view */}
+        {view === "grid" && (
+          <>
+            <input
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-[15px] outline-none focus:border-sky-400 mb-3.5"
+              placeholder={`Search ${tab === "us" ? "states" : "provinces"}…`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
-          ))}
-        </div>
+            <div className="grid grid-cols-4 gap-2 mb-5">
+              {filtered.map((plate) => (
+                <PlateTile
+                  key={plate.code}
+                  plate={plate}
+                  found={game.found.includes(plate.code)}
+                  onToggle={updateFound}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Found chips */}
         {game.found.length > 0 && (
