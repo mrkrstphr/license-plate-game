@@ -31,7 +31,7 @@ export default function NewGame() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
-      <TopBar backTo="/" backLabel="Games" />
+      <TopBar />
       <div className="max-w-lg mx-auto px-4 pt-6 pb-20">
         <h1 className="text-2xl font-black tracking-tight mb-1" style={{ color: "var(--text-primary)" }}>New Game</h1>
         <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>Name your trip and set the start date</p>

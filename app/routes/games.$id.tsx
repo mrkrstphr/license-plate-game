@@ -65,7 +65,7 @@ export default function PlayGame() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
-      <TopBar backTo="/" backLabel="Games" />
+      <TopBar />
 
       {/* Sticky summary */}
       <div className="px-4 py-3 sticky top-14 z-40 border-b" style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}>
