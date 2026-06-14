@@ -31,10 +31,10 @@ export function USMap({ found }: USMapProps) {
           );
         })}
         {/* Inset boxes for AK / HI */}
-        <rect x="18" y="388" width="148" height="62" rx="4" fill="none" stroke="#D1D5E0" strokeWidth="1" strokeDasharray="3,3"/>
-        <rect x="200" y="420" width="115" height="48" rx="4" fill="none" stroke="#D1D5E0" strokeWidth="1" strokeDasharray="3,3"/>
-        <text x="22" y="396" fontSize="6" fill="#9CA3AF">Alaska</text>
-        <text x="204" y="428" fontSize="6" fill="#9CA3AF">Hawaii</text>
+        <rect x="8" y="360" width="189" height="94" rx="4" fill="none" stroke="#D1D5E0" strokeWidth="1" strokeDasharray="3,3"/>
+        <rect x="203" y="398" width="119" height="56" rx="4" fill="none" stroke="#D1D5E0" strokeWidth="1" strokeDasharray="3,3"/>
+        <text x="12" y="368" fontSize="6" fill="#9CA3AF">Alaska</text>
+        <text x="207" y="406" fontSize="6" fill="#9CA3AF">Hawaii</text>
       </svg>
     </div>
   );
