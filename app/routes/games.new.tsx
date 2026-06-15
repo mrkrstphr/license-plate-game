@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import type { Route } from "./+types/games.new";
 import { createGame, loadGames, saveGames, todayISO } from "~/data/games";
 import { TopBar } from "~/components/ui/top-bar";
+import { Alert } from "~/components/ui/dialog";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "New Game · Plate Game" }];
@@ -58,11 +59,7 @@ export default function NewGame() {
               onChange={(e) => { setDate(e.target.value); setError(""); }} />
             <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>Set a past date to log a previous trip</p>
           </div>
-          {error && (
-            <div className="rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ background: "#fef2f2", color: "#ef4444" }}>
-              {error}
-            </div>
-          )}
+          <Alert message={error} />
           <button onClick={handleSubmit}
             className="w-full font-black text-base rounded-xl py-3"
             style={{ background: "var(--amber)", color: "var(--navy)" }}>

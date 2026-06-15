@@ -11,6 +11,7 @@ import { CAMap } from "~/components/ui/ca-map";
 import { USFlag } from "~/components/ui/us-flag";
 import { CAFlag } from "~/components/ui/ca-flag";
 import { ExportPDF } from "~/components/ui/export-pdf";
+import { ConfirmDialog } from "~/components/ui/dialog";
 
 export function meta() {
   return [{ title: "Playing · Plate Game" }];
@@ -222,32 +223,18 @@ export default function PlayGame() {
           <button
             onClick={() => setShowDelete(true)}
             className="w-full font-bold text-sm rounded-xl py-3"
-            style={{ background: "#fef2f2", color: "#ef4444" }}
+            style={{ background: "var(--danger-bg)", color: "var(--danger-text)" }}
           >
             Delete Game
           </button>
         ) : (
-          <div className="rounded-2xl p-4" style={{ background: "#fef2f2" }}>
-            <p className="font-bold mb-3" style={{ color: "#ef4444" }}>
-              Delete "{game.name}"? This can't be undone.
-            </p>
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                onClick={() => setShowDelete(false)}
-                className="font-bold rounded-xl py-2.5"
-                style={{ background: "var(--bg-muted)", color: "var(--text-primary)" }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="font-bold rounded-xl py-2.5 text-white"
-                style={{ background: "#ef4444" }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
+          <ConfirmDialog
+            title="Delete game?"
+            message={`"${game.name}" will be permanently deleted.`}
+            confirmLabel="Delete"
+            onConfirm={handleDelete}
+            onCancel={() => setShowDelete(false)}
+          />
         )}
       </div>
 

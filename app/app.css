@@ -26,6 +26,9 @@
   --plate-empty: #E8EAF0;
   --plate-border:#D1D5E0;
   --map-empty:   #D1D5E0;
+  --danger:      #ef4444;
+  --danger-bg:   #fef2f2;
+  --danger-text: #ef4444;
 }
 
 /* Dark mode tokens */
@@ -50,6 +53,9 @@
     --plate-empty: #252836;
     --plate-border:#2E3347;
     --map-empty:   #2E3347;
+    --danger:      #f87171;
+    --danger-bg:   #2d1515;
+    --danger-text: #f87171;
   }
 }
 
