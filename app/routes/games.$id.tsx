@@ -97,7 +97,7 @@ export default function PlayGame() {
                 style={tab === t ? tabActive : tabInactive}>
                 {t === "us"
                   ? <>{`🇺🇸 US States`}<br /><span className="font-black text-base" style={{ color: tab === t ? "#4A90D9" : "var(--text-muted)" }}>{uf}/{US_PLATES.length}</span></>
-                  : <><CAFlag style={{ width: 16, height: 11, borderRadius: 1, marginBottom: 2 }} /><br /><span className="font-black text-base" style={{ color: tab === t ? "#F5A623" : "var(--text-muted)" }}>{cf}/{CA_PLATES.length}</span></>
+                  : <><CAFlag style={{ width: 16, height: 11, borderRadius: 1, verticalAlign: "middle", marginRight: 4 }} />Canada<br /><span className="font-black text-base" style={{ color: tab === t ? "#F5A623" : "var(--text-muted)" }}>{cf}/{CA_PLATES.length}</span></>
                 }
               </button>
             ))}
