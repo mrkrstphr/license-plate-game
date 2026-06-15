@@ -5,6 +5,7 @@ import { loadGames, formatDate, type Game } from "~/data/games";
 import { US_PLATES, CA_PLATES, usFound, caFound, pct } from "~/data/plates";
 import { TopBar } from "~/components/ui/top-bar";
 import { ProgressBar } from "~/components/ui/progress";
+import { CAFlag } from "~/components/ui/ca-flag";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -80,7 +81,7 @@ export default function Home() {
                   </div>
                   <div className="space-y-2">
                     <ProgressBar value={upct} colorVar="--sky" hex="#4A90D9" label="🇺🇸 US States" sub={`${uf}/${US_PLATES.length} · ${upct}%`} />
-                    <ProgressBar value={cpct} colorVar="--amber" hex="#F5A623" label="🍁 Canada" sub={`${cf}/${CA_PLATES.length} · ${cpct}%`} />
+                    <ProgressBar value={cpct} colorVar="--amber" hex="#F5A623" label={<><CAFlag style={{ width: 14, height: 10, borderRadius: 1 }} /> Canada</>} sub={`${cf}/${CA_PLATES.length} · ${cpct}%`} />
                   </div>
                 </Link>
               );

@@ -8,6 +8,7 @@ import { ProgressBar } from "~/components/ui/progress";
 import { PlateTile } from "~/components/ui/plate-tile";
 import { USMap } from "~/components/ui/us-map";
 import { CAMap } from "~/components/ui/ca-map";
+import { CAFlag } from "~/components/ui/ca-flag";
 import { ExportPDF } from "~/components/ui/export-pdf";
 
 export function meta({}: Route.MetaArgs) {
@@ -81,7 +82,7 @@ export default function PlayGame() {
           </div>
           <div className="space-y-1.5">
             <ProgressBar value={upct} colorVar="--sky" hex="#4A90D9" label="🇺🇸 US States" sub={`${uf}/${US_PLATES.length}`} />
-            <ProgressBar value={cpct} colorVar="--amber" hex="#F5A623" label="🍁 Canada" sub={`${cf}/${CA_PLATES.length}`} />
+            <ProgressBar value={cpct} colorVar="--amber" hex="#F5A623" label={<><CAFlag style={{ width: 14, height: 10, borderRadius: 1 }} /> Canada</>} hex="#F5A623" sub={`${cf}/${CA_PLATES.length}`} />
           </div>
         </div>
       </div>
@@ -96,7 +97,7 @@ export default function PlayGame() {
                 style={tab === t ? tabActive : tabInactive}>
                 {t === "us"
                   ? <>{`🇺🇸 US States`}<br /><span className="font-black text-base" style={{ color: tab === t ? "#4A90D9" : "var(--text-muted)" }}>{uf}/{US_PLATES.length}</span></>
-                  : <>{`🍁 Canada`}<br /><span className="font-black text-base" style={{ color: tab === t ? "#F5A623" : "var(--text-muted)" }}>{cf}/{CA_PLATES.length}</span></>
+                  : <><CAFlag style={{ width: 16, height: 11, borderRadius: 1, marginBottom: 2 }} /><br /><span className="font-black text-base" style={{ color: tab === t ? "#F5A623" : "var(--text-muted)" }}>{cf}/{CA_PLATES.length}</span></>
                 }
               </button>
             ))}
@@ -115,7 +116,7 @@ export default function PlayGame() {
         {view === "map" && (
           <div className="rounded-2xl shadow-sm p-4 mb-4" style={{ background: "var(--bg-card)" }}>
             <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--text-muted)" }}>
-              {tab === "us" ? `🇺🇸 United States — ${uf}/${US_PLATES.length} found` : `🍁 Canada — ${cf}/${CA_PLATES.length} found`}
+              {tab === "us" ? `🇺🇸 United States — ${uf}/${US_PLATES.length} found` : `Canada — ${cf}/${CA_PLATES.length} found`}
             </p>
             {tab === "us" ? <USMap found={game.found} /> : <CAMap found={game.found} />}
           </div>
