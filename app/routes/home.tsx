@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation } from "react-router";
 import { useEffect, useState } from "react";
 import type { Route } from "./+types/home";
 import { loadGames, formatDate, type Game } from "~/data/games";
@@ -21,12 +21,14 @@ export default function Home() {
   const [games, setGames] = useState<Game[]>([]);
 
   // Re-load on every visit so returning from a game shows updated data
+  const location = useLocation();
+
   useEffect(() => {
     const sorted = loadGames().sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
     setGames(sorted);
-  });
+  }, [location]);
 
   const totalMax = US_PLATES.length + CA_PLATES.length;
 
