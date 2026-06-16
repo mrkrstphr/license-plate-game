@@ -7,6 +7,7 @@ import { TopBar } from "~/components/ui/top-bar";
 import { ProgressBar } from "~/components/ui/progress";
 import { USFlag } from "~/components/ui/us-flag";
 import { CAFlag } from "~/components/ui/ca-flag";
+import { buildExportData, downloadJSON } from "~/lib/export-json";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -31,6 +32,12 @@ export default function Home() {
   }, [location]);
 
   const totalMax = US_PLATES.length + CA_PLATES.length;
+
+  function handleExportAll() {
+    const data = buildExportData(games);
+    const date = new Date().toISOString().slice(0, 10);
+    downloadJSON(data, `license-plate-game-export-${date}.json`);
+  }
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
@@ -122,6 +129,16 @@ export default function Home() {
               );
             })}
           </div>
+        )}
+
+        {games.length > 0 && (
+          <button
+            onClick={handleExportAll}
+            className="w-full font-bold text-sm rounded-xl py-3 mt-4"
+            style={{ background: "var(--bg-card)", color: "var(--sky)", border: "1.5px solid var(--border)" }}
+          >
+            ↓ Export All Data (JSON)
+          </button>
         )}
       </div>
     </div>
