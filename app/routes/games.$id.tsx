@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
 import type { Route } from "./+types/games.$id";
-import { loadGames, saveGames, formatDate, type Game } from "~/data/games";
+import { loadGame, deleteGame, setPlateFound, formatDate, type Game } from "~/data/games";
 import { US_PLATES, CA_PLATES, ALL_PLATES, usFound, caFound, pct } from "~/data/plates";
 import { TopBar } from "~/components/ui/top-bar";
 import { ProgressBar } from "~/components/ui/progress";
@@ -12,6 +12,7 @@ import { USFlag } from "~/components/ui/us-flag";
 import { CAFlag } from "~/components/ui/ca-flag";
 import { ExportPDF } from "~/components/ui/export-pdf";
 import { ConfirmDialog } from "~/components/ui/dialog";
+import { useAuth } from "~/lib/auth-context";
 
 export function meta() {
   return [{ title: "Playing · Plate Game" }];
@@ -26,7 +27,9 @@ const FLAG_MD = { width: 18, height: 12, borderRadius: 1 } as const;
 export default function PlayGame() {
   const { id }     = useParams();
   const navigate   = useNavigate();
+  const { session, loading: authLoading } = useAuth();
   const [game, setGame]             = useState<Game | null>(null);
+  const [notFound, setNotFound]     = useState(false);
   const [tab, setTab]               = useState<RegionTab>("us");
   const [view, setView]             = useState<ViewMode>("grid");
   const [search, setSearch]         = useState("");
@@ -34,31 +37,54 @@ export default function PlayGame() {
   const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
-    const games = loadGames();
-    const found = games.find((g) => g.id === id);
-    if (!found) { navigate("/"); return; }
-    setGame(found);
-  }, [id]);
+    if (authLoading) return;
+    if (!session) { navigate("/login", { replace: true }); return; }
+    if (!id) return;
+    let active = true;
+    loadGame(id).then((found) => {
+      if (!active) return;
+      if (!found) { setNotFound(true); return; }
+      setGame(found);
+    });
+    return () => { active = false; };
+  }, [id, session, authLoading, navigate]);
 
   const updateFound = useCallback((code: string) => {
     setGame((prev) => {
       if (!prev) return prev;
-      const next    = prev.found.includes(code)
-        ? prev.found.filter((c) => c !== code)
-        : [...prev.found, code];
-      const updated = { ...prev, found: next };
-      // Persist using the updated value directly — no extra loadGames() call
-      saveGames(loadGames().map((g) => (g.id === prev.id ? updated : g)));
-      return updated;
+      const willBeFound = !prev.found.includes(code);
+      const next = willBeFound
+        ? [...prev.found, code]
+        : prev.found.filter((c) => c !== code);
+      // Optimistic update — UI reflects the tap instantly
+      setPlateFound(prev.id, code, willBeFound).then((ok) => {
+        if (!ok) {
+          // Revert on failure
+          setGame((cur) => cur && ({ ...cur, found: cur.found }));
+        }
+      });
+      return { ...prev, found: next };
     });
   }, []);
 
-  const handleDelete = useCallback(() => {
-    saveGames(loadGames().filter((g) => g.id !== id));
+  const handleDelete = useCallback(async () => {
+    if (!id) return;
+    await deleteGame(id);
     navigate("/");
-  }, [id]);
+  }, [id, navigate]);
 
-  if (!game) return null;
+  if (notFound) {
+    navigate("/", { replace: true });
+    return null;
+  }
+
+  if (!game) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-app)" }}>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
+      </div>
+    );
+  }
 
   const uf      = usFound(game.found);
   const cf      = caFound(game.found);

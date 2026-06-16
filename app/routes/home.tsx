@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import type { Route } from "./+types/home";
 import { loadGames, formatDate, type Game } from "~/data/games";
@@ -8,6 +8,8 @@ import { ProgressBar } from "~/components/ui/progress";
 import { USFlag } from "~/components/ui/us-flag";
 import { CAFlag } from "~/components/ui/ca-flag";
 import { buildExportData, downloadJSON } from "~/lib/export-json";
+import { useAuth } from "~/lib/auth-context";
+import { supabase } from "~/lib/supabase";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -19,17 +21,35 @@ export function meta({}: Route.MetaArgs) {
 const FLAG_STYLE = { width: 14, height: 10, borderRadius: 1 } as const;
 
 export default function Home() {
-  const [games, setGames] = useState<Game[]>([]);
-
-  // Re-load on every visit so returning from a game shows updated data
+  const { session, loading: authLoading, user, isAnonymous } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
 
+  const [games, setGames] = useState<Game[]>([]);
+  const [loadingGames, setLoadingGames] = useState(true);
+
+  // Redirect to login if there's no session (and we're not still resolving auth)
   useEffect(() => {
-    const sorted = loadGames().sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-    setGames(sorted);
-  }, [location]);
+    if (!authLoading && !session) {
+      navigate("/login", { replace: true });
+    }
+  }, [authLoading, session, navigate]);
+
+  // Load games whenever we land here with a session
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    setLoadingGames(true);
+    loadGames().then((data) => {
+      if (!active) return;
+      const sorted = [...data].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      setGames(sorted);
+      setLoadingGames(false);
+    });
+    return () => { active = false; };
+  }, [session, location]);
 
   const totalMax = US_PLATES.length + CA_PLATES.length;
 
@@ -39,16 +59,31 @@ export default function Home() {
     downloadJSON(data, `license-plate-game-export-${date}.json`);
   }
 
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    navigate("/login", { replace: true });
+  }
+
+  if (authLoading || !session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-app)" }}>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
       <TopBar action={
-        <Link
-          to="/games/new"
-          className="font-black text-sm px-3 py-1.5 rounded-lg"
-          style={{ background: "var(--amber)", color: "var(--navy)" }}
-        >
-          + New
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/games/new"
+            className="font-black text-sm px-3 py-1.5 rounded-lg"
+            style={{ background: "var(--amber)", color: "var(--navy)" }}
+          >
+            + New
+          </Link>
+        </div>
       } />
 
       <div className="max-w-lg mx-auto px-4 pb-20 pt-4">
@@ -75,8 +110,24 @@ export default function Home() {
           </Link>
         </div>
 
+        {/* Account row */}
+        {!isAnonymous && user?.email && (
+          <div className="flex items-center justify-between mb-4 px-1">
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Signed in as <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{user.email}</span>
+            </p>
+            <button onClick={handleSignOut} className="text-xs font-bold" style={{ color: "var(--sky)" }}>
+              Sign out
+            </button>
+          </div>
+        )}
+
         {/* Games list */}
-        {games.length === 0 ? (
+        {loadingGames ? (
+          <div className="rounded-2xl shadow-sm p-10 text-center" style={{ background: "var(--bg-card)" }}>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading your games…</p>
+          </div>
+        ) : games.length === 0 ? (
           <div className="rounded-2xl shadow-sm p-10 text-center" style={{ background: "var(--bg-card)" }}>
             <div className="text-4xl mb-3">🗺️</div>
             <p className="font-bold text-base mb-1" style={{ color: "var(--text-primary)" }}>No games yet</p>

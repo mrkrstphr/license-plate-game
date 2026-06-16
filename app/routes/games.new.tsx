@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import type { Route } from "./+types/games.new";
-import { createGame, loadGames, saveGames, todayISO } from "~/data/games";
+import { createGame, todayISO } from "~/data/games";
 import { TopBar } from "~/components/ui/top-bar";
 import { Alert } from "~/components/ui/dialog";
 
@@ -14,13 +14,18 @@ export default function NewGame() {
   const [name, setName] = useState("");
   const [date, setDate] = useState(todayISO());
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!name.trim()) { setError("Give this game a name"); return; }
     if (!date) { setError("Pick a date"); return; }
-    const games = loadGames();
-    const game = createGame(name.trim(), date);
-    saveGames([...games, game]);
+    setSubmitting(true);
+    const game = await createGame(name.trim(), date);
+    setSubmitting(false);
+    if (!game) {
+      setError("Couldn't create the game. Try again.");
+      return;
+    }
     navigate(`/games/${game.id}`);
   }
 
@@ -60,10 +65,10 @@ export default function NewGame() {
             <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>Set a past date to log a previous trip</p>
           </div>
           <Alert message={error} />
-          <button onClick={handleSubmit}
+          <button onClick={handleSubmit} disabled={submitting}
             className="w-full font-black text-base rounded-xl py-3"
-            style={{ background: "var(--amber)", color: "var(--navy)" }}>
-            Start Game →
+            style={{ background: "var(--amber)", color: "var(--navy)", opacity: submitting ? 0.7 : 1 }}>
+            {submitting ? "Creating…" : "Start Game →"}
           </button>
         </div>
       </div>
