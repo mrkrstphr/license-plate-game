@@ -2,6 +2,8 @@
 -- License Plate Game — initial schema
 -- ============================================================================
 
+create extension if not exists pgcrypto;
+
 -- Profiles: one row per authenticated user (email or anonymous)
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -11,10 +13,12 @@ create table if not exists profiles (
 
 alter table profiles enable row level security;
 
+drop policy if exists "Users can view their own profile" on profiles;
 create policy "Users can view their own profile"
   on profiles for select
   using (auth.uid() = id);
 
+drop policy if exists "Users can update their own profile" on profiles;
 create policy "Users can update their own profile"
   on profiles for update
   using (auth.uid() = id);
@@ -54,6 +58,7 @@ alter table games enable row level security;
 
 create index if not exists games_owner_id_idx on games(owner_id);
 
+drop policy if exists "Owners can do everything with their own games" on games;
 create policy "Owners can do everything with their own games"
   on games for all
   using (auth.uid() = owner_id)
@@ -75,6 +80,7 @@ alter table game_plates enable row level security;
 
 create index if not exists game_plates_game_id_idx on game_plates(game_id);
 
+drop policy if exists "Owners can do everything with their own game plates" on game_plates;
 create policy "Owners can do everything with their own game plates"
   on game_plates for all
   using (
@@ -109,6 +115,7 @@ alter table game_shares enable row level security;
 create index if not exists game_shares_game_id_idx on game_shares(game_id);
 create index if not exists game_shares_token_idx on game_shares(token);
 
+drop policy if exists "Owners can manage shares for their own games" on game_shares;
 create policy "Owners can manage shares for their own games"
   on game_shares for all
   using (
@@ -128,6 +135,7 @@ create policy "Owners can manage shares for their own games"
 
 -- Anyone (including anon) can look up a share by token — needed to resolve
 -- a share link before they're necessarily authenticated.
+drop policy if exists "Anyone can read a share by token" on game_shares;
 create policy "Anyone can read a share by token"
   on game_shares for select
   using (true);
@@ -151,16 +159,19 @@ as $$
 $$;
 
 -- Public read access to games that have any share (view or collaborate)
+drop policy if exists "Public can view shared games" on games;
 create policy "Public can view shared games"
   on games for select
   using (game_has_share(id, array['view', 'collaborate']));
 
 -- Public read access to plates of shared games
+drop policy if exists "Public can view plates of shared games" on game_plates;
 create policy "Public can view plates of shared games"
   on game_plates for select
   using (game_has_share(game_id, array['view', 'collaborate']));
 
 -- Authenticated (incl. anonymous) users can update plates on collaborate-shared games
+drop policy if exists "Authenticated users can edit plates on collaborate-shared games" on game_plates;
 create policy "Authenticated users can edit plates on collaborate-shared games"
   on game_plates for update
   using (
