@@ -105,7 +105,7 @@ create policy "Owners can do everything with their own game plates"
 create table if not exists game_shares (
   id uuid primary key default gen_random_uuid(),
   game_id uuid not null references games(id) on delete cascade,
-  token text not null unique default encode(gen_random_bytes(12), 'hex'),
+  token text not null unique default replace(gen_random_uuid()::text, '-', ''),
   mode text not null check (mode in ('view', 'collaborate')),
   created_at timestamptz not null default now()
 );
