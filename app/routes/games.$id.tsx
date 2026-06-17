@@ -78,11 +78,11 @@ export default function PlayGame() {
   const handleDelete = useCallback(async () => {
     if (!id) return;
     await deleteGame(id);
-    navigate("/");
+    navigate("/games");
   }, [id, navigate]);
 
   if (notFound) {
-    navigate("/", { replace: true });
+    navigate("/games", { replace: true });
     return null;
   }
 

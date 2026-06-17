@@ -14,7 +14,7 @@ export default function Login() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/";
+  const redirectTo = searchParams.get("redirect") || "/games";
 
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -34,7 +34,7 @@ export default function Login() {
     setSubmitting(true);
     setError("");
     const callbackUrl = new URL(`${window.location.origin}${import.meta.env.BASE_URL}auth/callback`);
-    if (redirectTo !== "/") {
+    if (redirectTo !== "/games") {
       callbackUrl.searchParams.set("redirect", redirectTo);
     }
     const { error: signInError } = await supabase.auth.signInWithOtp({

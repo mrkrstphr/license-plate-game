@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import type { Route } from "./+types/home";
+import type { Route } from "./+types/games._index";
 import { loadGames, formatDate, type Game } from "~/data/games";
 import { US_PLATES, CA_PLATES, usFound, caFound, pct } from "~/data/plates";
 import { TopBar } from "~/components/ui/top-bar";
@@ -13,14 +13,14 @@ import { migrateLocalStorageGames } from "~/lib/local-storage-migration";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "License Plate Game" },
+    { title: "Your Games · License Plate Game" },
     { name: "description", content: "Track license plates on your road trip!" },
   ];
 }
 
 const FLAG_STYLE = { width: 14, height: 10, borderRadius: 1 } as const;
 
-export default function Home() {
+export default function GamesList() {
   const { session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -99,31 +99,6 @@ export default function Home() {
       } />
 
       <div className="max-w-lg mx-auto px-4 pb-20 pt-4">
-        {/* Hero */}
-        <div
-          className="rounded-2xl p-6 mb-5 relative overflow-hidden"
-          style={{ background: "linear-gradient(135deg, var(--bg-hero-from) 0%, var(--bg-hero-to) 100%)" }}
-        >
-          <div className="absolute top-[-20px] right-[-20px] text-[100px] opacity-[0.06] select-none pointer-events-none">🚗</div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="text-4xl flex-shrink-0">🛣️</div>
-            <h1 className="text-2xl font-black leading-tight tracking-tight" style={{ color: "#fff" }}>
-              License Plate<br />
-              <span style={{ color: "var(--amber)" }}>Game</span>
-            </h1>
-          </div>
-          <p className="text-sm mt-2" style={{ color: "rgba(255,255,255,0.6)" }}>
-            Spot plates from all 50 states + Canada on your road trip
-          </p>
-          <Link
-            to="/games/new"
-            className="mt-4 flex items-center justify-center w-full font-black text-base rounded-xl py-3"
-            style={{ background: "var(--amber)", color: "var(--navy)" }}
-          >
-            + Start New Game
-          </Link>
-        </div>
-
         {/* Migration banner */}
         {migrationBanner && (
           <div
@@ -152,7 +127,14 @@ export default function Home() {
           <div className="rounded-2xl shadow-sm p-10 text-center" style={{ background: "var(--bg-card)" }}>
             <div className="text-4xl mb-3">🗺️</div>
             <p className="font-bold text-base mb-1" style={{ color: "var(--text-primary)" }}>No games yet</p>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Start your first road trip game above</p>
+            <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>Start your first road trip game</p>
+            <Link
+              to="/games/new"
+              className="inline-block font-black text-sm rounded-xl px-5 py-2.5"
+              style={{ background: "var(--amber)", color: "var(--navy)" }}
+            >
+              + Start New Game
+            </Link>
           </div>
         ) : (
           <div className="space-y-3">

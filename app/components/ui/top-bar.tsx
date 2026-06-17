@@ -20,7 +20,7 @@ export function TopBar({ action, sticky = true }: TopBarProps) {
     <div className={sticky ? "sticky top-0 z-50 shadow-md" : ""}>
       <header className="h-14 px-4 flex items-center justify-between"
         style={{ background: "var(--navy)" }}>
-        <Link to="/" className="font-black text-lg tracking-tight flex items-center gap-2" style={{ color: "#fff" }}>
+        <Link to={session ? "/games" : "/"} className="font-black text-lg tracking-tight flex items-center gap-2" style={{ color: "#fff" }}>
           <span>🚗</span>
           <span>Plate <span style={{ color: "var(--amber)" }}>Game</span></span>
         </Link>

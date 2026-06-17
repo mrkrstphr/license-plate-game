@@ -104,7 +104,7 @@ export default function SharedGame() {
             <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
               This share link may have been revoked or never existed.
             </p>
-            <Link to="/" style={{ color: "var(--sky)" }}>← Back to Plate Game</Link>
+            <Link to={session ? "/games" : "/"} style={{ color: "var(--sky)" }}>← Back to Plate Game</Link>
           </div>
         </div>
       </div>
