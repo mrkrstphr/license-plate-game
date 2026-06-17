@@ -70,9 +70,9 @@ export default function AuthCallback() {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--bg-app)" }}>
       <TopBar />
-      <div className="flex items-center justify-center px-6" style={{ minHeight: "calc(100vh - 56px)" }}>
+      <div className="flex-1 flex items-center justify-center px-6">
         <div className="text-center">
           {error ? (
             <>

@@ -88,9 +88,9 @@ export default function PlayGame() {
 
   if (!game) {
     return (
-      <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
+      <div className="min-h-screen flex flex-col" style={{ background: "var(--bg-app)" }}>
         <TopBar />
-        <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 56px)" }}>
+        <div className="flex-1 flex items-center justify-center">
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
         </div>
       </div>
@@ -111,29 +111,30 @@ export default function PlayGame() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
-      <TopBar />
-
-      {/* Sticky summary */}
-      <div
-        className="px-4 py-3 sticky top-14 z-40 border-b"
-        style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
-      >
-        <div className="max-w-lg mx-auto">
-          <div className="flex justify-between items-center mb-2.5">
-            <div>
-              <p className="font-black text-base leading-tight" style={{ color: "var(--text-primary)" }}>{game.name}</p>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>{formatDate(game.date)}</p>
+      <div className="sticky top-0 z-50">
+        <TopBar sticky={false} />
+        {/* Game summary */}
+        <div
+          className="px-4 py-3 border-b shadow-md"
+          style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
+        >
+          <div className="max-w-lg mx-auto">
+            <div className="flex justify-between items-center mb-2.5">
+              <div>
+                <p className="font-black text-base leading-tight" style={{ color: "var(--text-primary)" }}>{game.name}</p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{formatDate(game.date)}</p>
+              </div>
+              <span
+                className="text-sm font-black px-3 py-1 rounded-full"
+                style={{ background: "var(--navy)", color: "#fff" }}
+              >
+                {game.found.length} found
+              </span>
             </div>
-            <span
-              className="text-sm font-black px-3 py-1 rounded-full"
-              style={{ background: "var(--navy)", color: "#fff" }}
-            >
-              {game.found.length} found
-            </span>
-          </div>
-          <div className="space-y-1.5">
-            <ProgressBar value={upct} hex="#4A90D9" label={<><USFlag style={FLAG_SM} /> US States</>} sub={`${uf}/${US_PLATES.length}`} />
-            <ProgressBar value={cpct} hex="#F5A623" label={<><CAFlag style={FLAG_SM} /> Canada</>}   sub={`${cf}/${CA_PLATES.length}`} />
+            <div className="space-y-1.5">
+              <ProgressBar value={upct} hex="#4A90D9" label={<><USFlag style={FLAG_SM} /> US States</>} sub={`${uf}/${US_PLATES.length}`} />
+              <ProgressBar value={cpct} hex="#F5A623" label={<><CAFlag style={FLAG_SM} /> Canada</>}   sub={`${cf}/${CA_PLATES.length}`} />
+            </div>
           </div>
         </div>
       </div>

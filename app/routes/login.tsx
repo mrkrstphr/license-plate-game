@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import type { Route } from "./+types/login";
 import { supabase } from "~/lib/supabase";
 import { useAuth } from "~/lib/auth-context";
@@ -107,10 +107,6 @@ export default function Login() {
             </>
           )}
         </div>
-
-        <p className="text-center text-xs mt-6" style={{ color: "var(--text-muted)" }}>
-          <Link to="/" style={{ color: "var(--sky)" }}>← Back to games</Link>
-        </p>
       </div>
     </div>
   );

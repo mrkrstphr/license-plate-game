@@ -9,7 +9,6 @@ import { USFlag } from "~/components/ui/us-flag";
 import { CAFlag } from "~/components/ui/ca-flag";
 import { buildExportData, downloadJSON } from "~/lib/export-json";
 import { useAuth } from "~/lib/auth-context";
-import { supabase } from "~/lib/supabase";
 import { migrateLocalStorageGames } from "~/lib/local-storage-migration";
 
 export function meta({}: Route.MetaArgs) {
@@ -22,7 +21,7 @@ export function meta({}: Route.MetaArgs) {
 const FLAG_STYLE = { width: 14, height: 10, borderRadius: 1 } as const;
 
 export default function Home() {
-  const { session, loading: authLoading, user, isAnonymous } = useAuth();
+  const { session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -74,16 +73,11 @@ export default function Home() {
     downloadJSON(data, `license-plate-game-export-${date}.json`);
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    navigate("/login", { replace: true });
-  }
-
   if (authLoading || !session) {
     return (
-      <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
+      <div className="min-h-screen flex flex-col" style={{ background: "var(--bg-app)" }}>
         <TopBar />
-        <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 56px)" }}>
+        <div className="flex-1 flex items-center justify-center">
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
         </div>
       </div>
@@ -111,11 +105,13 @@ export default function Home() {
           style={{ background: "linear-gradient(135deg, var(--bg-hero-from) 0%, var(--bg-hero-to) 100%)" }}
         >
           <div className="absolute top-[-20px] right-[-20px] text-[100px] opacity-[0.06] select-none pointer-events-none">🚗</div>
-          <div className="text-4xl mb-2">🛣️</div>
-          <h1 className="text-2xl font-black leading-tight tracking-tight" style={{ color: "#fff" }}>
-            License Plate<br />
-            <span style={{ color: "var(--amber)" }}>Game</span>
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="text-4xl flex-shrink-0">🛣️</div>
+            <h1 className="text-2xl font-black leading-tight tracking-tight" style={{ color: "#fff" }}>
+              License Plate<br />
+              <span style={{ color: "var(--amber)" }}>Game</span>
+            </h1>
+          </div>
           <p className="text-sm mt-2" style={{ color: "rgba(255,255,255,0.6)" }}>
             Spot plates from all 50 states + Canada on your road trip
           </p>
@@ -143,18 +139,6 @@ export default function Home() {
               style={{ color: "var(--found)" }}
             >
               ×
-            </button>
-          </div>
-        )}
-
-        {/* Account row */}
-        {!isAnonymous && user?.email && (
-          <div className="flex items-center justify-between mb-4 px-1">
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Signed in as <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{user.email}</span>
-            </p>
-            <button onClick={handleSignOut} className="text-xs font-bold" style={{ color: "var(--sky)" }}>
-              Sign out
             </button>
           </div>
         )}
