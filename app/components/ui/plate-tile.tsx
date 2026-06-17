@@ -45,7 +45,7 @@ export function PlateTile({ plate, found, foundByEmail, onToggle }: PlateTilePro
         {plate.code}
       </span>
       <span className="text-[9px] font-medium mt-1 text-center leading-tight max-w-[60px] truncate"
-        style={{ color: found ? "var(--found)" : "var(--text-faint)" }}>
+        style={{ color: found ? "var(--found)" : "var(--text-muted)" }}>
         {plate.name}
       </span>
     </button>

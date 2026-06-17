@@ -277,7 +277,7 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-sm rounded-2xl shadow-xl p-5 space-y-5"
+      <div className="w-full max-w-sm rounded-2xl shadow-xl p-5 space-y-5 max-h-[85vh] overflow-y-auto"
         style={{ background: "var(--bg-card)" }}>
 
         <div className="flex items-center justify-between">
@@ -285,7 +285,7 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
             <h2 className="font-black text-lg" style={{ color: "var(--text-primary)" }}>Export to PDF</h2>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{game.name} · {formatDate(game.date)}</p>
           </div>
-          <button onClick={onClose} className="text-2xl leading-none" style={{ color: "var(--text-muted)" }}>×</button>
+          <button onClick={onClose} className="text-2xl leading-none -m-2 p-2" style={{ color: "var(--text-muted)" }} aria-label="Close">×</button>
         </div>
 
         <div>

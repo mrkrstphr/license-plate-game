@@ -87,7 +87,7 @@ export function ShareGame({ game, onClose }: ShareGameProps) {
             <h2 className="font-black text-lg" style={{ color: "var(--text-primary)" }}>Share Game</h2>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{game.name}</p>
           </div>
-          <button onClick={onClose} className="text-2xl leading-none" style={{ color: "var(--text-muted)" }}>×</button>
+          <button onClick={onClose} className="text-2xl leading-none -m-2 p-2" style={{ color: "var(--text-muted)" }} aria-label="Close">×</button>
         </div>
 
         {loading ? (
