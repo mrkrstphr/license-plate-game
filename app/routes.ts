@@ -6,4 +6,5 @@ export default [
   route("auth/callback", "routes/auth.callback.tsx"),
   route("games/new", "routes/games.new.tsx"),
   route("games/:id", "routes/games.$id.tsx"),
+  route("shared/:token", "routes/shared.$token.tsx"),
 ] satisfies RouteConfig;

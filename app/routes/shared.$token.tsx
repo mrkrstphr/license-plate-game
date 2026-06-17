@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router";
-import type { Route } from "./+types/games.$id";
-import { loadGame, deleteGame, setPlateFound, formatDate, type Game } from "~/data/games";
+import { useNavigate, useParams, Link } from "react-router";
+import type { Route } from "./+types/shared.$token";
+import { loadSharedGame, setSharedPlateFound, type ShareMode } from "~/data/shares";
+import { formatDate, type Game } from "~/data/games";
 import { US_PLATES, CA_PLATES, ALL_PLATES, usFound, caFound, pct } from "~/data/plates";
 import { TopBar } from "~/components/ui/top-bar";
 import { ProgressBar } from "~/components/ui/progress";
@@ -10,13 +11,10 @@ import { USMap } from "~/components/ui/us-map";
 import { CAMap } from "~/components/ui/ca-map";
 import { USFlag } from "~/components/ui/us-flag";
 import { CAFlag } from "~/components/ui/ca-flag";
-import { ExportPDF } from "~/components/ui/export-pdf";
-import { ConfirmDialog } from "~/components/ui/dialog";
-import { ShareGame } from "~/components/ui/share-game";
 import { useAuth } from "~/lib/auth-context";
 
 export function meta() {
-  return [{ title: "Playing · Plate Game" }];
+  return [{ title: "Shared Game · Plate Game" }];
 }
 
 type RegionTab = "us" | "ca";
@@ -25,62 +23,71 @@ type ViewMode  = "grid" | "map";
 const FLAG_SM = { width: 14, height: 10, borderRadius: 1 } as const;
 const FLAG_MD = { width: 18, height: 12, borderRadius: 1 } as const;
 
-export default function PlayGame() {
-  const { id }     = useParams();
-  const navigate   = useNavigate();
+export default function SharedGame() {
+  const { token } = useParams();
+  const navigate = useNavigate();
   const { session, loading: authLoading } = useAuth();
-  const [game, setGame]             = useState<Game | null>(null);
-  const [notFound, setNotFound]     = useState(false);
-  const [tab, setTab]               = useState<RegionTab>("us");
-  const [view, setView]             = useState<ViewMode>("grid");
-  const [search, setSearch]         = useState("");
-  const [showDelete, setShowDelete] = useState(false);
-  const [showExport, setShowExport] = useState(false);
-  const [showShare, setShowShare]   = useState(false);
 
+  const [game, setGame]         = useState<Game | null>(null);
+  const [mode, setMode]         = useState<ShareMode | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [tab, setTab]           = useState<RegionTab>("us");
+  const [view, setView]         = useState<ViewMode>("grid");
+  const [search, setSearch]     = useState("");
+
+  // Load the shared game — works whether signed in or not, since reading
+  // is always public for any valid share token (view or collaborate).
   useEffect(() => {
-    if (authLoading) return;
-    if (!session) { navigate("/login", { replace: true }); return; }
-    if (!id) return;
+    if (!token) return;
     let active = true;
-    loadGame(id).then((found) => {
+    loadSharedGame(token).then((result) => {
       if (!active) return;
-      if (!found) { setNotFound(true); return; }
-      setGame(found);
+      if (!result) { setNotFound(true); return; }
+      setGame(result.game);
+      setMode(result.mode);
     });
     return () => { active = false; };
-  }, [id, session, authLoading, navigate]);
+  }, [token]);
+
+  // Collaborate mode requires a real signed-in account. If we land here
+  // signed out, redirect to login and bring them right back afterward.
+  useEffect(() => {
+    if (authLoading || mode !== "collaborate") return;
+    if (!session) {
+      navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`, { replace: true });
+    }
+  }, [authLoading, session, mode, navigate]);
+
+  const canEdit = mode === "collaborate" && Boolean(session);
 
   const updateFound = useCallback((code: string) => {
+    if (!canEdit) return;
     setGame((prev) => {
       if (!prev) return prev;
       const willBeFound = !prev.found.includes(code);
       const next = willBeFound
         ? [...prev.found, code]
         : prev.found.filter((c) => c !== code);
-      // Optimistic update — UI reflects the tap instantly
-      setPlateFound(prev.id, code, willBeFound).then((ok) => {
-        if (!ok) {
-          // Revert on failure
-          setGame((cur) => cur && ({ ...cur, found: cur.found }));
-        }
-      });
+      setSharedPlateFound(prev.id, code, willBeFound);
       return { ...prev, found: next };
     });
-  }, []);
-
-  const handleDelete = useCallback(async () => {
-    if (!id) return;
-    await deleteGame(id);
-    navigate("/");
-  }, [id, navigate]);
+  }, [canEdit]);
 
   if (notFound) {
-    navigate("/", { replace: true });
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-app)" }}>
+        <div className="text-center px-6">
+          <p className="font-bold text-base mb-1" style={{ color: "var(--text-primary)" }}>Link not found</p>
+          <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+            This share link may have been revoked or never existed.
+          </p>
+          <Link to="/" style={{ color: "var(--sky)" }}>← Back to Plate Game</Link>
+        </div>
+      </div>
+    );
   }
 
-  if (!game) {
+  if (!game || !mode) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-app)" }}>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
@@ -88,11 +95,11 @@ export default function PlayGame() {
     );
   }
 
-  const uf      = usFound(game.found);
-  const cf      = caFound(game.found);
-  const upct    = pct(uf, US_PLATES.length);
-  const cpct    = pct(cf, CA_PLATES.length);
-  const plates  = tab === "us" ? US_PLATES : CA_PLATES;
+  const uf = usFound(game.found);
+  const cf = caFound(game.found);
+  const upct = pct(uf, US_PLATES.length);
+  const cpct = pct(cf, CA_PLATES.length);
+  const plates = tab === "us" ? US_PLATES : CA_PLATES;
   const filtered = search.trim()
     ? plates.filter((p) =>
         p.code.toLowerCase().includes(search.toLowerCase()) ||
@@ -104,21 +111,24 @@ export default function PlayGame() {
     <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
       <TopBar />
 
+      {/* Mode banner */}
+      <div className="px-4 py-2 text-center text-xs font-bold" style={{ background: "var(--bg-muted)", color: "var(--text-muted)" }}>
+        {mode === "view"
+          ? "👁 View-only shared link"
+          : canEdit
+          ? "✏️ Collaborating — your changes save automatically"
+          : "Signing in to collaborate…"}
+      </div>
+
       {/* Sticky summary */}
-      <div
-        className="px-4 py-3 sticky top-14 z-40 border-b"
-        style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
-      >
+      <div className="px-4 py-3 sticky top-[88px] z-40 border-b" style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}>
         <div className="max-w-lg mx-auto">
           <div className="flex justify-between items-center mb-2.5">
             <div>
               <p className="font-black text-base leading-tight" style={{ color: "var(--text-primary)" }}>{game.name}</p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>{formatDate(game.date)}</p>
             </div>
-            <span
-              className="text-sm font-black px-3 py-1 rounded-full"
-              style={{ background: "var(--navy)", color: "#fff" }}
-            >
+            <span className="text-sm font-black px-3 py-1 rounded-full" style={{ background: "var(--navy)", color: "#fff" }}>
               {game.found.length} found
             </span>
           </div>
@@ -157,7 +167,6 @@ export default function PlayGame() {
             })}
           </div>
 
-          {/* Grid / Map toggle */}
           <div className="rounded-xl p-1 flex flex-col gap-1" style={{ background: "var(--bg-muted)" }}>
             {(["grid", "map"] as ViewMode[]).map((v) => {
               const active = view === v;
@@ -208,14 +217,19 @@ export default function PlayGame() {
                   key={plate.code}
                   plate={plate}
                   found={game.found.includes(plate.code)}
-                  onToggle={updateFound}
+                  onToggle={canEdit ? updateFound : () => {}}
                 />
               ))}
             </div>
+            {!canEdit && (
+              <p className="text-xs text-center mb-5" style={{ color: "var(--text-muted)" }}>
+                This is a view-only link — plates can't be changed here.
+              </p>
+            )}
           </>
         )}
 
-        {/* Found chips — always visible */}
+        {/* Found chips */}
         {game.found.length > 0 && (
           <div className="rounded-2xl shadow-sm p-4 mb-3" style={{ background: "var(--bg-card)" }}>
             <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "var(--text-muted)" }}>
@@ -225,58 +239,19 @@ export default function PlayGame() {
               {game.found.map((code) => (
                 <button
                   key={code}
-                  onClick={() => updateFound(code)}
-                  title={`Remove ${ALL_PLATES.find((p) => p.code === code)?.name}`}
+                  onClick={() => canEdit && updateFound(code)}
+                  disabled={!canEdit}
+                  title={canEdit ? `Remove ${ALL_PLATES.find((p) => p.code === code)?.name}` : ALL_PLATES.find((p) => p.code === code)?.name}
                   className="rounded-lg px-2.5 py-1 text-sm font-bold border"
                   style={{ background: "var(--found-bg)", color: "var(--found)", borderColor: "var(--found-border)" }}
                 >
-                  {code} ✕
+                  {code}{canEdit ? " ✕" : ""}
                 </button>
               ))}
             </div>
           </div>
         )}
-
-        {/* Share */}
-        <button
-          onClick={() => setShowShare(true)}
-          className="w-full font-bold text-sm rounded-xl py-3 mb-3"
-          style={{ background: "var(--bg-card)", color: "var(--sky)", border: "1.5px solid var(--border)" }}
-        >
-          ⇪ Share Game
-        </button>
-
-        {/* Export */}
-        <button
-          onClick={() => setShowExport(true)}
-          className="w-full font-bold text-sm rounded-xl py-3 mb-3"
-          style={{ background: "var(--bg-card)", color: "var(--sky)", border: "1.5px solid var(--border)" }}
-        >
-          ↓ Export to PDF
-        </button>
-
-        {/* Delete */}
-        {!showDelete ? (
-          <button
-            onClick={() => setShowDelete(true)}
-            className="w-full font-bold text-sm rounded-xl py-3"
-            style={{ background: "var(--danger-bg)", color: "var(--danger-text)" }}
-          >
-            Delete Game
-          </button>
-        ) : (
-          <ConfirmDialog
-            title="Delete game?"
-            message={`"${game.name}" will be permanently deleted.`}
-            confirmLabel="Delete"
-            onConfirm={handleDelete}
-            onCancel={() => setShowDelete(false)}
-          />
-        )}
       </div>
-
-      {showExport && <ExportPDF game={game} onClose={() => setShowExport(false)} />}
-      {showShare && <ShareGame game={game} onClose={() => setShowShare(false)} />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import type { Route } from "./+types/login";
 import { supabase } from "~/lib/supabase";
 import { useAuth } from "~/lib/auth-context";
@@ -13,13 +13,16 @@ export function meta({}: Route.MetaArgs) {
 export default function Login() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
+
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   if (!loading && session && !sent) {
-    navigate("/");
+    navigate(redirectTo, { replace: true });
     return null;
   }
 
@@ -30,10 +33,14 @@ export default function Login() {
     }
     setSubmitting(true);
     setError("");
+    const callbackUrl = new URL(`${window.location.origin}${import.meta.env.BASE_URL}auth/callback`);
+    if (redirectTo !== "/") {
+      callbackUrl.searchParams.set("redirect", redirectTo);
+    }
     const { error: signInError } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}auth/callback`,
+        emailRedirectTo: callbackUrl.toString(),
       },
     });
     setSubmitting(false);

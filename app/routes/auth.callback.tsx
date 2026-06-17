@@ -12,6 +12,7 @@ export default function AuthCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState("");
+  const redirectTo = searchParams.get("redirect") || "/";
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -24,7 +25,7 @@ export default function AuthCallback() {
           setError(exchangeError.message);
           return;
         }
-        navigate("/", { replace: true });
+        navigate(redirectTo, { replace: true });
       });
       return;
     }
@@ -49,7 +50,7 @@ export default function AuthCallback() {
             setError(setSessionError.message);
             return;
           }
-          navigate("/", { replace: true });
+          navigate(redirectTo, { replace: true });
         });
       return;
     }
@@ -61,7 +62,7 @@ export default function AuthCallback() {
         return;
       }
       if (data.session) {
-        navigate("/", { replace: true });
+        navigate(redirectTo, { replace: true });
       } else {
         setError("No sign-in code found in the link. It may have expired — try requesting a new one.");
       }
