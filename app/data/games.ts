@@ -7,6 +7,7 @@ export interface Game {
   date: string; // YYYY-MM-DD
   createdAt: string;
   found: string[]; // plate codes
+  foundBy: Record<string, string | null>; // plate code -> finder's email (or null if unknown/owner-only)
 }
 
 // ── Reads ─────────────────────────────────────────────────────────────────────
@@ -27,7 +28,7 @@ export async function loadGames(): Promise<Game[]> {
   const gameIds = gamesData.map((g) => g.id);
   const { data: platesData, error: platesError } = await supabase
     .from("game_plates")
-    .select("game_id, code")
+    .select("game_id, code, found_by, profiles(email)")
     .in("game_id", gameIds)
     .eq("found", true);
 
@@ -36,10 +37,15 @@ export async function loadGames(): Promise<Game[]> {
   }
 
   const foundByGame = new Map<string, string[]>();
-  for (const row of platesData ?? []) {
+  const foundByMap = new Map<string, Record<string, string | null>>();
+  for (const row of (platesData as any[]) ?? []) {
     const list = foundByGame.get(row.game_id) ?? [];
     list.push(row.code);
     foundByGame.set(row.game_id, list);
+
+    const map = foundByMap.get(row.game_id) ?? {};
+    map[row.code] = row.profiles?.email ?? null;
+    foundByMap.set(row.game_id, map);
   }
 
   return gamesData.map((g) => ({
@@ -48,6 +54,7 @@ export async function loadGames(): Promise<Game[]> {
     date: g.date,
     createdAt: g.created_at,
     found: foundByGame.get(g.id) ?? [],
+    foundBy: foundByMap.get(g.id) ?? {},
   }));
 }
 
@@ -65,7 +72,7 @@ export async function loadGame(id: string): Promise<Game | null> {
 
   const { data: platesData, error: platesError } = await supabase
     .from("game_plates")
-    .select("code")
+    .select("code, found_by, profiles(email)")
     .eq("game_id", id)
     .eq("found", true);
 
@@ -73,12 +80,18 @@ export async function loadGame(id: string): Promise<Game | null> {
     console.error("loadGame (plates) error:", platesError);
   }
 
+  const foundBy: Record<string, string | null> = {};
+  for (const row of (platesData as any[]) ?? []) {
+    foundBy[row.code] = row.profiles?.email ?? null;
+  }
+
   return {
     id: gameData.id,
     name: gameData.name,
     date: gameData.date,
     createdAt: gameData.created_at,
-    found: (platesData ?? []).map((r) => r.code),
+    found: (platesData ?? []).map((r: any) => r.code),
+    foundBy,
   };
 }
 
@@ -116,13 +129,21 @@ export async function createGame(name: string, date: string): Promise<Game | nul
     date: gameData.date,
     createdAt: gameData.created_at,
     found: [],
+    foundBy: {},
   };
 }
 
 export async function setPlateFound(gameId: string, code: string, found: boolean): Promise<boolean> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id ?? null;
+
   const { error } = await supabase
     .from("game_plates")
-    .update({ found, found_at: found ? new Date().toISOString() : null })
+    .update({
+      found,
+      found_at: found ? new Date().toISOString() : null,
+      found_by: found ? userId : null,
+    })
     .eq("game_id", gameId)
     .eq("code", code);
 

@@ -77,10 +77,16 @@ export default function SharedGame() {
       const next = willBeFound
         ? [...prev.found, code]
         : prev.found.filter((c) => c !== code);
+      const nextFoundBy = { ...prev.foundBy };
+      if (willBeFound) {
+        nextFoundBy[code] = session?.user?.email ?? null;
+      } else {
+        delete nextFoundBy[code];
+      }
       setSharedPlateFound(prev.id, code, willBeFound);
-      return { ...prev, found: next };
+      return { ...prev, found: next, foundBy: nextFoundBy };
     });
-  }, [canEdit]);
+  }, [canEdit, session]);
 
   if (notFound) {
     return (
@@ -226,6 +232,7 @@ export default function SharedGame() {
                   key={plate.code}
                   plate={plate}
                   found={game.found.includes(plate.code)}
+                  foundByEmail={game.foundBy[plate.code]}
                   onToggle={canEdit ? updateFound : () => {}}
                 />
               ))}

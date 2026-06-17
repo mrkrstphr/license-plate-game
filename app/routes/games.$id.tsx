@@ -58,6 +58,12 @@ export default function PlayGame() {
       const next = willBeFound
         ? [...prev.found, code]
         : prev.found.filter((c) => c !== code);
+      const nextFoundBy = { ...prev.foundBy };
+      if (willBeFound) {
+        nextFoundBy[code] = session?.user?.email ?? null;
+      } else {
+        delete nextFoundBy[code];
+      }
       // Optimistic update — UI reflects the tap instantly
       setPlateFound(prev.id, code, willBeFound).then((ok) => {
         if (!ok) {
@@ -65,9 +71,9 @@ export default function PlayGame() {
           setGame((cur) => cur && ({ ...cur, found: cur.found }));
         }
       });
-      return { ...prev, found: next };
+      return { ...prev, found: next, foundBy: nextFoundBy };
     });
-  }, []);
+  }, [session]);
 
   const handleDelete = useCallback(async () => {
     if (!id) return;
@@ -208,6 +214,7 @@ export default function PlayGame() {
                   key={plate.code}
                   plate={plate}
                   found={game.found.includes(plate.code)}
+                  foundByEmail={game.foundBy[plate.code]}
                   onToggle={updateFound}
                 />
               ))}

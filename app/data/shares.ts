@@ -136,12 +136,17 @@ export async function loadSharedGame(token: string): Promise<SharedGameResult | 
 
   const { data: platesData, error: platesError } = await supabase
     .from("game_plates")
-    .select("code")
+    .select("code, found_by, profiles(email)")
     .eq("game_id", shareData.game_id)
     .eq("found", true);
 
   if (platesError) {
     console.error("loadSharedGame (plates) error:", platesError);
+  }
+
+  const foundBy: Record<string, string | null> = {};
+  for (const row of (platesData as any[]) ?? []) {
+    foundBy[row.code] = row.profiles?.email ?? null;
   }
 
   return {
@@ -150,7 +155,8 @@ export async function loadSharedGame(token: string): Promise<SharedGameResult | 
       name: gameData.name,
       date: gameData.date,
       createdAt: gameData.created_at,
-      found: (platesData ?? []).map((r) => r.code),
+      found: (platesData ?? []).map((r: any) => r.code),
+      foundBy,
     },
     mode: shareData.mode as ShareMode,
     shareId: shareData.id,
