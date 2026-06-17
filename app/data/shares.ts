@@ -11,6 +11,13 @@ export interface Share {
   createdAt: string;
 }
 
+export interface ShareCollaborator {
+  userId: string;
+  email: string | null;
+  firstAccessedAt: string;
+  lastAccessedAt: string;
+}
+
 // ── Owner-side: manage shares for a game ────────────────────────────────────
 
 export async function loadSharesForGame(gameId: string): Promise<Share[]> {
@@ -64,11 +71,37 @@ export async function revokeShare(shareId: string): Promise<boolean> {
   return true;
 }
 
+/**
+ * Who has opened this share link (owner-facing). Useful to review before
+ * revoking — shows everyone who's accessed it, whether or not they've
+ * actually edited any plates.
+ */
+export async function loadShareCollaborators(shareId: string): Promise<ShareCollaborator[]> {
+  const { data, error } = await supabase
+    .from("share_access")
+    .select("user_id, first_accessed_at, last_accessed_at, profiles(email)")
+    .eq("share_id", shareId)
+    .order("last_accessed_at", { ascending: false });
+
+  if (error || !data) {
+    console.error("loadShareCollaborators error:", error);
+    return [];
+  }
+
+  return data.map((row: any) => ({
+    userId: row.user_id,
+    email: row.profiles?.email ?? null,
+    firstAccessedAt: row.first_accessed_at,
+    lastAccessedAt: row.last_accessed_at,
+  }));
+}
+
 // ── Public-side: resolve a share link by token ──────────────────────────────
 
 export interface SharedGameResult {
   game: Game;
   mode: ShareMode;
+  shareId: string;
 }
 
 /**
@@ -81,7 +114,7 @@ export interface SharedGameResult {
 export async function loadSharedGame(token: string): Promise<SharedGameResult | null> {
   const { data: shareData, error: shareError } = await supabase
     .from("game_shares")
-    .select("game_id, mode")
+    .select("id, game_id, mode")
     .eq("token", token)
     .single();
 
@@ -120,20 +153,50 @@ export async function loadSharedGame(token: string): Promise<SharedGameResult | 
       found: (platesData ?? []).map((r) => r.code),
     },
     mode: shareData.mode as ShareMode,
+    shareId: shareData.id,
   };
+}
+
+/**
+ * Records that the current signed-in user has accessed a share link.
+ * Only meaningful (and only called) for collaborate-mode shares, since
+ * view-mode visitors are never authenticated. Upserts so repeat visits
+ * just bump last_accessed_at rather than creating duplicate rows.
+ */
+export async function recordShareAccess(shareId: string): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+  if (!userId) return;
+
+  const { error } = await supabase
+    .from("share_access")
+    .upsert(
+      { share_id: shareId, user_id: userId, last_accessed_at: new Date().toISOString() },
+      { onConflict: "share_id,user_id" }
+    );
+
+  if (error) {
+    console.error("recordShareAccess error:", error);
+  }
 }
 
 /**
  * Toggles a plate on a collaborate-shared game. Requires the caller to be
  * authenticated — enforced by the "Authenticated users can edit plates on
- * collaborate-shared games" RLS policy, which checks auth.uid() is not null.
- * Since this app never creates anonymous sessions, that policy now means
- * "any signed-in (magic link) user," exactly as intended.
+ * collaborate-shared games" RLS policy. Stamps found_by with the editor's
+ * own id so the owner can see who made each change.
  */
 export async function setSharedPlateFound(gameId: string, code: string, found: boolean): Promise<boolean> {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id ?? null;
+
   const { error } = await supabase
     .from("game_plates")
-    .update({ found, found_at: found ? new Date().toISOString() : null })
+    .update({
+      found,
+      found_at: found ? new Date().toISOString() : null,
+      found_by: found ? userId : null,
+    })
     .eq("game_id", gameId)
     .eq("code", code);
 

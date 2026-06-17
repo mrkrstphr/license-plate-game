@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import type { Game } from "~/data/games";
-import { loadSharesForGame, createShare, revokeShare, type Share, type ShareMode } from "~/data/shares";
+import {
+  loadSharesForGame,
+  createShare,
+  revokeShare,
+  loadShareCollaborators,
+  type Share,
+  type ShareMode,
+  type ShareCollaborator,
+} from "~/data/shares";
 
 interface ShareGameProps {
   game: Game;
@@ -9,6 +17,17 @@ interface ShareGameProps {
 
 function shareUrl(token: string): string {
   return `${window.location.origin}${import.meta.env.BASE_URL}shared/${token}`;
+}
+
+function timeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const mins = Math.round(ms / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  return `${days}d ago`;
 }
 
 export function ShareGame({ game, onClose }: ShareGameProps) {
@@ -76,8 +95,8 @@ export function ShareGame({ game, onClose }: ShareGameProps) {
             <ShareSection
               title="View Links"
               description="Anyone with the link can see live progress — no sign-in needed."
-              mode="view"
               shares={viewShares}
+              showCollaborators={false}
               creating={creating === "view"}
               copiedId={copiedId}
               onCreate={() => handleCreate("view")}
@@ -87,8 +106,8 @@ export function ShareGame({ game, onClose }: ShareGameProps) {
             <ShareSection
               title="Collaborate Links"
               description="Anyone with the link can mark plates found — they'll need to sign in with email first."
-              mode="collaborate"
               shares={collabShares}
+              showCollaborators
               creating={creating === "collaborate"}
               copiedId={copiedId}
               onCreate={() => handleCreate("collaborate")}
@@ -113,8 +132,8 @@ export function ShareGame({ game, onClose }: ShareGameProps) {
 interface ShareSectionProps {
   title: string;
   description: string;
-  mode: ShareMode;
   shares: Share[];
+  showCollaborators: boolean;
   creating: boolean;
   copiedId: string | null;
   onCreate: () => void;
@@ -122,7 +141,7 @@ interface ShareSectionProps {
   onCopy: (share: Share) => void;
 }
 
-function ShareSection({ title, description, shares, creating, copiedId, onCreate, onRevoke, onCopy }: ShareSectionProps) {
+function ShareSection({ title, description, shares, showCollaborators, creating, copiedId, onCreate, onRevoke, onCopy }: ShareSectionProps) {
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--text-muted)" }}>{title}</p>
@@ -130,33 +149,14 @@ function ShareSection({ title, description, shares, creating, copiedId, onCreate
 
       <div className="space-y-2 mb-2.5">
         {shares.map((share) => (
-          <div
+          <ShareRow
             key={share.id}
-            className="flex items-center gap-2 rounded-xl px-3 py-2.5"
-            style={{ background: "var(--bg-muted)" }}
-          >
-            <p
-              className="flex-1 text-xs font-mono truncate"
-              style={{ color: "var(--text-primary)" }}
-              title={shareUrl(share.token)}
-            >
-              {shareUrl(share.token)}
-            </p>
-            <button
-              onClick={() => onCopy(share)}
-              className="text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0"
-              style={{ background: "var(--bg-card)", color: "var(--sky)" }}
-            >
-              {copiedId === share.id ? "Copied!" : "Copy"}
-            </button>
-            <button
-              onClick={() => onRevoke(share.id)}
-              className="text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0"
-              style={{ background: "var(--danger-bg)", color: "var(--danger-text)" }}
-            >
-              Revoke
-            </button>
-          </div>
+            share={share}
+            showCollaborators={showCollaborators}
+            copied={copiedId === share.id}
+            onRevoke={() => onRevoke(share.id)}
+            onCopy={() => onCopy(share)}
+          />
         ))}
       </div>
 
@@ -168,6 +168,92 @@ function ShareSection({ title, description, shares, creating, copiedId, onCreate
       >
         {creating ? "Creating…" : "+ New link"}
       </button>
+    </div>
+  );
+}
+
+interface ShareRowProps {
+  share: Share;
+  showCollaborators: boolean;
+  copied: boolean;
+  onRevoke: () => void;
+  onCopy: () => void;
+}
+
+function ShareRow({ share, showCollaborators, copied, onRevoke, onCopy }: ShareRowProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [collaborators, setCollaborators] = useState<ShareCollaborator[] | null>(null);
+  const [loadingCollabs, setLoadingCollabs] = useState(false);
+
+  async function toggleExpanded() {
+    if (expanded) { setExpanded(false); return; }
+    setExpanded(true);
+    if (collaborators === null) {
+      setLoadingCollabs(true);
+      const data = await loadShareCollaborators(share.id);
+      setCollaborators(data);
+      setLoadingCollabs(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-muted)" }}>
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <p
+          className="flex-1 text-xs font-mono truncate"
+          style={{ color: "var(--text-primary)" }}
+          title={shareUrl(share.token)}
+        >
+          {shareUrl(share.token)}
+        </p>
+        <button
+          onClick={onCopy}
+          className="text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0"
+          style={{ background: "var(--bg-card)", color: "var(--sky)" }}
+        >
+          {copied ? "Copied!" : "Copy"}
+        </button>
+        <button
+          onClick={onRevoke}
+          className="text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0"
+          style={{ background: "var(--danger-bg)", color: "var(--danger-text)" }}
+        >
+          Revoke
+        </button>
+      </div>
+
+      {showCollaborators && (
+        <button
+          onClick={toggleExpanded}
+          className="w-full text-left px-3 py-2 text-xs font-semibold border-t"
+          style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
+        >
+          {expanded ? "▾" : "▸"} Who has access
+        </button>
+      )}
+
+      {showCollaborators && expanded && (
+        <div className="px-3 pb-2.5">
+          {loadingCollabs ? (
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Loading…</p>
+          ) : !collaborators || collaborators.length === 0 ? (
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>No one has opened this link yet.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {collaborators.map((c) => (
+                <div key={c.userId} className="flex items-center justify-between">
+                  <p className="text-xs font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+                    {c.email ?? "Unknown user"}
+                  </p>
+                  <p className="text-xs flex-shrink-0 ml-2" style={{ color: "var(--text-muted)" }}>
+                    {timeAgo(c.lastAccessedAt)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

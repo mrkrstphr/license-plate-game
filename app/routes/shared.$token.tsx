@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import type { Route } from "./+types/shared.$token";
-import { loadSharedGame, setSharedPlateFound, type ShareMode } from "~/data/shares";
+import { loadSharedGame, setSharedPlateFound, recordShareAccess, type ShareMode } from "~/data/shares";
 import { formatDate, type Game } from "~/data/games";
 import { US_PLATES, CA_PLATES, ALL_PLATES, usFound, caFound, pct } from "~/data/plates";
 import { TopBar } from "~/components/ui/top-bar";
@@ -30,6 +30,7 @@ export default function SharedGame() {
 
   const [game, setGame]         = useState<Game | null>(null);
   const [mode, setMode]         = useState<ShareMode | null>(null);
+  const [shareId, setShareId]   = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab]           = useState<RegionTab>("us");
   const [view, setView]         = useState<ViewMode>("grid");
@@ -45,6 +46,7 @@ export default function SharedGame() {
       if (!result) { setNotFound(true); return; }
       setGame(result.game);
       setMode(result.mode);
+      setShareId(result.shareId);
     });
     return () => { active = false; };
   }, [token]);
@@ -57,6 +59,13 @@ export default function SharedGame() {
       navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`, { replace: true });
     }
   }, [authLoading, session, mode, navigate]);
+
+  // Log that this user has opened the collaborate link, so the owner can
+  // see who has access (and when) before deciding to revoke.
+  useEffect(() => {
+    if (mode !== "collaborate" || !session || !shareId) return;
+    recordShareAccess(shareId);
+  }, [mode, session, shareId]);
 
   const canEdit = mode === "collaborate" && Boolean(session);
 
