@@ -9,6 +9,7 @@ import {
   type ShareMode,
   type ShareCollaborator,
 } from "~/data/shares";
+import { useEscapeKey } from "~/components/ui/dialog";
 
 interface ShareGameProps {
   game: Game;
@@ -35,6 +36,7 @@ export function ShareGame({ game, onClose }: ShareGameProps) {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState<ShareMode | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  useEscapeKey(onClose);
 
   useEffect(() => {
     let active = true;

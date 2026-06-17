@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Game } from "~/data/games";
 import { formatDate } from "~/data/games";
 import { US_PLATES, CA_PLATES, pct } from "~/data/plates";
+import { useEscapeKey } from "~/components/ui/dialog";
 
 interface ExportPDFProps {
   game: Game;
@@ -12,6 +13,7 @@ export function ExportPDF({ game, onClose }: ExportPDFProps) {
   const [includeUS, setIncludeUS] = useState(true);
   const [includeCA, setIncludeCA] = useState(true);
   const [generating, setGenerating] = useState(false);
+  useEscapeKey(onClose);
 
   async function handleExport() {
     if (!includeUS && !includeCA) return;

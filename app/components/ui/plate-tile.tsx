@@ -44,7 +44,7 @@ export function PlateTile({ plate, found, foundByEmail, onToggle }: PlateTilePro
       <span className="font-black text-sm tracking-wide leading-none" style={{ color: found ? "var(--found)" : "var(--text-muted)" }}>
         {plate.code}
       </span>
-      <span className="text-[8px] font-medium mt-1 text-center leading-tight max-w-[48px] truncate"
+      <span className="text-[9px] font-medium mt-1 text-center leading-tight max-w-[60px] truncate"
         style={{ color: found ? "var(--found)" : "var(--text-faint)" }}>
         {plate.name}
       </span>

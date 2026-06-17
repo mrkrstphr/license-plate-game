@@ -72,15 +72,17 @@ export default function AuthCallback() {
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
       <TopBar />
-      <div className="max-w-lg mx-auto px-4 pt-16 text-center">
-        {error ? (
-          <>
-            <p className="font-bold text-base mb-2" style={{ color: "var(--danger-text)" }}>Sign-in failed</p>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>{error}</p>
-          </>
-        ) : (
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Signing you in…</p>
-        )}
+      <div className="flex items-center justify-center px-6" style={{ minHeight: "calc(100vh - 56px)" }}>
+        <div className="text-center">
+          {error ? (
+            <>
+              <p className="font-bold text-base mb-2" style={{ color: "var(--danger-text)" }}>Sign-in failed</p>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>{error}</p>
+            </>
+          ) : (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Signing you in…</p>
+          )}
+        </div>
       </div>
     </div>
   );

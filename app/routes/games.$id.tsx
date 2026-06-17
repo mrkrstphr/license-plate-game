@@ -88,8 +88,11 @@ export default function PlayGame() {
 
   if (!game) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-app)" }}>
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
+      <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
+        <TopBar />
+        <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 56px)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
+        </div>
       </div>
     );
   }
@@ -244,25 +247,25 @@ export default function PlayGame() {
           </div>
         )}
 
-        {/* Share */}
-        <button
-          onClick={() => setShowShare(true)}
-          className="w-full font-bold text-sm rounded-xl py-3 mb-3"
-          style={{ background: "var(--bg-card)", color: "var(--sky)", border: "1.5px solid var(--border)" }}
-        >
-          ⇪ Share Game
-        </button>
+        {/* Secondary actions */}
+        <div className="space-y-2 mb-5">
+          <button
+            onClick={() => setShowShare(true)}
+            className="w-full font-bold text-sm rounded-xl py-3"
+            style={{ background: "var(--bg-card)", color: "var(--sky)", border: "1.5px solid var(--border)" }}
+          >
+            ⇪ Share Game
+          </button>
+          <button
+            onClick={() => setShowExport(true)}
+            className="w-full font-bold text-sm rounded-xl py-3"
+            style={{ background: "var(--bg-card)", color: "var(--sky)", border: "1.5px solid var(--border)" }}
+          >
+            ↓ Export to PDF
+          </button>
+        </div>
 
-        {/* Export */}
-        <button
-          onClick={() => setShowExport(true)}
-          className="w-full font-bold text-sm rounded-xl py-3 mb-3"
-          style={{ background: "var(--bg-card)", color: "var(--sky)", border: "1.5px solid var(--border)" }}
-        >
-          ↓ Export to PDF
-        </button>
-
-        {/* Delete */}
+        {/* Destructive action */}
         {!showDelete ? (
           <button
             onClick={() => setShowDelete(true)}

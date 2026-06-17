@@ -1,5 +1,14 @@
 import { useEffect } from "react";
 
+// Shared escape-key-to-close behavior for any dismissible overlay
+export function useEscapeKey(onEscape: () => void) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onEscape(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onEscape]);
+}
+
 // ── Alert / error banner ──────────────────────────────────────────────────────
 interface AlertProps {
   message: string;
@@ -35,12 +44,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onCancel]);
+  useEscapeKey(onCancel);
 
   return (
     <div

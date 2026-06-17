@@ -81,8 +81,11 @@ export default function Home() {
 
   if (authLoading || !session) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-app)" }}>
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
+      <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
+        <TopBar />
+        <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 56px)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
+        </div>
       </div>
     );
   }

@@ -98,13 +98,16 @@ export default function SharedGame() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-app)" }}>
-        <div className="text-center px-6">
-          <p className="font-bold text-base mb-1" style={{ color: "var(--text-primary)" }}>Link not found</p>
-          <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-            This share link may have been revoked or never existed.
-          </p>
-          <Link to="/" style={{ color: "var(--sky)" }}>← Back to Plate Game</Link>
+      <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
+        <TopBar />
+        <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 56px)" }}>
+          <div className="text-center px-6">
+            <p className="font-bold text-base mb-1" style={{ color: "var(--text-primary)" }}>Link not found</p>
+            <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+              This share link may have been revoked or never existed.
+            </p>
+            <Link to="/" style={{ color: "var(--sky)" }}>← Back to Plate Game</Link>
+          </div>
         </div>
       </div>
     );
@@ -112,8 +115,11 @@ export default function SharedGame() {
 
   if (!game || !mode) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-app)" }}>
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
+      <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
+        <TopBar />
+        <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 56px)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading…</p>
+        </div>
       </div>
     );
   }
@@ -134,18 +140,21 @@ export default function SharedGame() {
     <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
       <TopBar />
 
-      {/* Mode banner */}
-      <div className="px-4 py-2 text-center text-xs font-bold" style={{ background: "var(--bg-muted)", color: "var(--text-muted)" }}>
-        {mode === "view"
-          ? "👁 View-only shared link"
-          : canEdit
-          ? "✏️ Collaborating — your changes save automatically"
-          : "Signing in to collaborate…"}
-      </div>
-
-      {/* Sticky summary */}
-      <div className="px-4 py-3 sticky top-[88px] z-40 border-b" style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}>
+      {/* Sticky summary (mode badge folded in, so there's only one sticky element to position) */}
+      <div className="px-4 py-3 sticky top-14 z-40 border-b" style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}>
         <div className="max-w-lg mx-auto">
+          <div className="flex items-center gap-2 mb-2">
+            <span
+              className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+              style={mode === "view"
+                ? { background: "var(--bg-muted)", color: "var(--text-muted)" }
+                : canEdit
+                ? { background: "var(--found-bg)", color: "var(--found)" }
+                : { background: "var(--bg-muted)", color: "var(--text-muted)" }}
+            >
+              {mode === "view" ? "👁 View only" : canEdit ? "✏️ Collaborating" : "Signing in…"}
+            </span>
+          </div>
           <div className="flex justify-between items-center mb-2.5">
             <div>
               <p className="font-black text-base leading-tight" style={{ color: "var(--text-primary)" }}>{game.name}</p>
@@ -245,9 +254,13 @@ export default function SharedGame() {
                 />
               ))}
             </div>
-            {!canEdit && (
+            {!canEdit ? (
               <p className="text-xs text-center mb-5" style={{ color: "var(--text-muted)" }}>
                 This is a view-only link — plates can't be changed here.
+              </p>
+            ) : (
+              <p className="text-xs text-center mb-5" style={{ color: "var(--text-muted)" }}>
+                Your changes save automatically.
               </p>
             )}
           </>
