@@ -10,6 +10,7 @@ import { CAFlag } from "~/components/ui/ca-flag";
 import { buildExportData, downloadJSON } from "~/lib/export-json";
 import { useAuth } from "~/lib/auth-context";
 import { supabase } from "~/lib/supabase";
+import { migrateLocalStorageGames } from "~/lib/local-storage-migration";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -27,6 +28,7 @@ export default function Home() {
 
   const [games, setGames] = useState<Game[]>([]);
   const [loadingGames, setLoadingGames] = useState(true);
+  const [migrationBanner, setMigrationBanner] = useState<string | null>(null);
 
   // Redirect to login if there's no session (and we're not still resolving auth)
   useEffect(() => {
@@ -35,19 +37,32 @@ export default function Home() {
     }
   }, [authLoading, session, navigate]);
 
-  // Load games whenever we land here with a session
+  // On each visit with a session: migrate any legacy localStorage games
+  // (one-time, no-op after first run on this device), then load games.
   useEffect(() => {
-    if (!session) return;
+    if (!session?.user?.id) return;
     let active = true;
     setLoadingGames(true);
-    loadGames().then((data) => {
-      if (!active) return;
-      const sorted = [...data].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-      setGames(sorted);
-      setLoadingGames(false);
-    });
+
+    migrateLocalStorageGames(session.user.id)
+      .then((result) => {
+        if (!active) return;
+        if (result.ran && result.migratedCount > 0) {
+          setMigrationBanner(
+            `Imported ${result.migratedCount} game${result.migratedCount === 1 ? "" : "s"} from this device's old local storage.`
+          );
+        }
+        return loadGames();
+      })
+      .then((data) => {
+        if (!active || !data) return;
+        const sorted = [...data].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        setGames(sorted);
+        setLoadingGames(false);
+      });
+
     return () => { active = false; };
   }, [session, location]);
 
@@ -109,6 +124,25 @@ export default function Home() {
             + Start New Game
           </Link>
         </div>
+
+        {/* Migration banner */}
+        {migrationBanner && (
+          <div
+            className="flex items-start justify-between gap-3 rounded-2xl p-4 mb-4"
+            style={{ background: "var(--found-bg)", border: "1.5px solid var(--found-border)" }}
+          >
+            <p className="text-sm font-semibold" style={{ color: "var(--found)" }}>
+              ✓ {migrationBanner}
+            </p>
+            <button
+              onClick={() => setMigrationBanner(null)}
+              className="text-lg leading-none flex-shrink-0"
+              style={{ color: "var(--found)" }}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Account row */}
         {!isAnonymous && user?.email && (
