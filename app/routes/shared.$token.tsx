@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import type { Route } from "./+types/shared.$token";
-import { loadSharedGame, setSharedPlateFound, recordShareAccess, type ShareMode } from "~/data/shares";
+import { loadSharedGame, setSharedPlateFound, recordShareAccess, recordShareView, type ShareMode } from "~/data/shares";
 import { formatDate, type Game } from "~/data/games";
 import { US_PLATES, CA_PLATES, ALL_PLATES, usFound, caFound, pct } from "~/data/plates";
 import { TopBar } from "~/components/ui/top-bar";
@@ -66,6 +66,14 @@ export default function SharedGame() {
     if (mode !== "collaborate" || !session || !shareId) return;
     recordShareAccess(shareId);
   }, [mode, session, shareId]);
+
+  // Bump the view counter for view-mode links. Fires once per load,
+  // regardless of auth state — view links are meant to be frictionless,
+  // so this works for fully anonymous visitors via a security-definer RPC.
+  useEffect(() => {
+    if (mode !== "view" || !token) return;
+    recordShareView(token);
+  }, [mode, token]);
 
   const canEdit = mode === "collaborate" && Boolean(session);
 

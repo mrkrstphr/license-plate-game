@@ -9,6 +9,7 @@ export interface Share {
   token: string;
   mode: ShareMode;
   createdAt: string;
+  viewCount: number;
 }
 
 export interface ShareCollaborator {
@@ -23,7 +24,7 @@ export interface ShareCollaborator {
 export async function loadSharesForGame(gameId: string): Promise<Share[]> {
   const { data, error } = await supabase
     .from("game_shares")
-    .select("id, game_id, token, mode, created_at")
+    .select("id, game_id, token, mode, created_at, view_count")
     .eq("game_id", gameId)
     .order("created_at", { ascending: false });
 
@@ -38,6 +39,7 @@ export async function loadSharesForGame(gameId: string): Promise<Share[]> {
     token: s.token,
     mode: s.mode as ShareMode,
     createdAt: s.created_at,
+    viewCount: s.view_count ?? 0,
   }));
 }
 
@@ -45,7 +47,7 @@ export async function createShare(gameId: string, mode: ShareMode): Promise<Shar
   const { data, error } = await supabase
     .from("game_shares")
     .insert({ game_id: gameId, mode })
-    .select("id, game_id, token, mode, created_at")
+    .select("id, game_id, token, mode, created_at, view_count")
     .single();
 
   if (error || !data) {
@@ -59,6 +61,7 @@ export async function createShare(gameId: string, mode: ShareMode): Promise<Shar
     token: data.token,
     mode: data.mode as ShareMode,
     createdAt: data.created_at,
+    viewCount: data.view_count ?? 0,
   };
 }
 
@@ -161,6 +164,19 @@ export async function loadSharedGame(token: string): Promise<SharedGameResult | 
     mode: shareData.mode as ShareMode,
     shareId: shareData.id,
   };
+}
+
+/**
+ * Increments the view counter for a share link via a security-definer RPC,
+ * so anonymous (signed-out) visitors to a view-mode link can contribute to
+ * the count without any direct write grant on game_shares. Called once per
+ * page load — every load counts, no de-duplication by visitor.
+ */
+export async function recordShareView(token: string): Promise<void> {
+  const { error } = await supabase.rpc("increment_share_view_count", { p_token: token });
+  if (error) {
+    console.error("recordShareView error:", error);
+  }
 }
 
 /**

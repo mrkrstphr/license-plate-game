@@ -97,6 +97,7 @@ export function ShareGame({ game, onClose }: ShareGameProps) {
               description="Anyone with the link can see live progress — no sign-in needed."
               shares={viewShares}
               showCollaborators={false}
+              showViewCount
               creating={creating === "view"}
               copiedId={copiedId}
               onCreate={() => handleCreate("view")}
@@ -108,6 +109,7 @@ export function ShareGame({ game, onClose }: ShareGameProps) {
               description="Anyone with the link can mark plates found — they'll need to sign in with email first."
               shares={collabShares}
               showCollaborators
+              showViewCount={false}
               creating={creating === "collaborate"}
               copiedId={copiedId}
               onCreate={() => handleCreate("collaborate")}
@@ -134,6 +136,7 @@ interface ShareSectionProps {
   description: string;
   shares: Share[];
   showCollaborators: boolean;
+  showViewCount: boolean;
   creating: boolean;
   copiedId: string | null;
   onCreate: () => void;
@@ -141,7 +144,7 @@ interface ShareSectionProps {
   onCopy: (share: Share) => void;
 }
 
-function ShareSection({ title, description, shares, showCollaborators, creating, copiedId, onCreate, onRevoke, onCopy }: ShareSectionProps) {
+function ShareSection({ title, description, shares, showCollaborators, showViewCount, creating, copiedId, onCreate, onRevoke, onCopy }: ShareSectionProps) {
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--text-muted)" }}>{title}</p>
@@ -153,6 +156,7 @@ function ShareSection({ title, description, shares, showCollaborators, creating,
             key={share.id}
             share={share}
             showCollaborators={showCollaborators}
+            showViewCount={showViewCount}
             copied={copiedId === share.id}
             onRevoke={() => onRevoke(share.id)}
             onCopy={() => onCopy(share)}
@@ -175,12 +179,13 @@ function ShareSection({ title, description, shares, showCollaborators, creating,
 interface ShareRowProps {
   share: Share;
   showCollaborators: boolean;
+  showViewCount: boolean;
   copied: boolean;
   onRevoke: () => void;
   onCopy: () => void;
 }
 
-function ShareRow({ share, showCollaborators, copied, onRevoke, onCopy }: ShareRowProps) {
+function ShareRow({ share, showCollaborators, showViewCount, copied, onRevoke, onCopy }: ShareRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [collaborators, setCollaborators] = useState<ShareCollaborator[] | null>(null);
   const [loadingCollabs, setLoadingCollabs] = useState(false);
@@ -221,6 +226,14 @@ function ShareRow({ share, showCollaborators, copied, onRevoke, onCopy }: ShareR
           Revoke
         </button>
       </div>
+
+      {showViewCount && (
+        <div className="px-3 pb-2.5 pt-0.5">
+          <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+            👁 {share.viewCount} view{share.viewCount === 1 ? "" : "s"}
+          </p>
+        </div>
+      )}
 
       {showCollaborators && (
         <button
