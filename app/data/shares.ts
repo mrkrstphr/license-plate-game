@@ -104,65 +104,47 @@ export async function loadShareCollaborators(shareId: string): Promise<ShareColl
 export interface SharedGameResult {
   game: Game;
   mode: ShareMode;
-  shareId: string;
 }
 
 /**
- * Resolves a share token to its game + plate data. Relies entirely on the
- * "Public can view shared games" / "...plates of shared games" RLS policies
- * — this works for signed-out visitors for both view and collaborate modes,
- * since reading is always public; only editing requires auth (enforced
- * separately by setSharedPlateFound).
+ * Resolves a share token to its game + plate data via the get_shared_game()
+ * security-definer RPC. This is the only legitimate way to read a shared
+ * game's data -- the RPC verifies the token internally (`where token =
+ * p_token`), so unlike the table-level RLS policies this replaced, there's
+ * no way to reach another game's data without holding its exact token.
  */
 export async function loadSharedGame(token: string): Promise<SharedGameResult | null> {
-  const { data: shareData, error: shareError } = await supabase
-    .from("game_shares")
-    .select("id, game_id, mode")
-    .eq("token", token)
-    .single();
+  const { data, error } = await supabase.rpc("get_shared_game", { p_token: token });
 
-  if (shareError || !shareData) {
-    console.error("loadSharedGame (share lookup) error:", shareError);
+  if (error) {
+    console.error("loadSharedGame error:", error);
+    return null;
+  }
+  if (!data || data.length === 0) {
     return null;
   }
 
-  const { data: gameData, error: gameError } = await supabase
-    .from("games")
-    .select("id, name, date, created_at")
-    .eq("id", shareData.game_id)
-    .single();
-
-  if (gameError || !gameData) {
-    console.error("loadSharedGame (game) error:", gameError);
-    return null;
-  }
-
-  const { data: platesData, error: platesError } = await supabase
-    .from("game_plates")
-    .select("code, found_by, profiles(email)")
-    .eq("game_id", shareData.game_id)
-    .eq("found", true);
-
-  if (platesError) {
-    console.error("loadSharedGame (plates) error:", platesError);
-  }
-
+  const first = data[0];
+  const found: string[] = [];
   const foundBy: Record<string, string | null> = {};
-  for (const row of (platesData as any[]) ?? []) {
-    foundBy[row.code] = row.profiles?.email ?? null;
+
+  for (const row of data as any[]) {
+    if (row.found) {
+      found.push(row.plate_code);
+      foundBy[row.plate_code] = row.found_by_email ?? null;
+    }
   }
 
   return {
     game: {
-      id: gameData.id,
-      name: gameData.name,
-      date: gameData.date,
-      createdAt: gameData.created_at,
-      found: (platesData ?? []).map((r: any) => r.code),
+      id: first.game_id,
+      name: first.name,
+      date: first.date,
+      createdAt: first.created_at,
+      found,
       foundBy,
     },
-    mode: shareData.mode as ShareMode,
-    shareId: shareData.id,
+    mode: first.mode as ShareMode,
   };
 }
 
@@ -180,47 +162,33 @@ export async function recordShareView(token: string): Promise<void> {
 }
 
 /**
- * Records that the current signed-in user has accessed a share link.
- * Only meaningful (and only called) for collaborate-mode shares, since
- * view-mode visitors are never authenticated. Upserts so repeat visits
- * just bump last_accessed_at rather than creating duplicate rows.
+ * Records that the current signed-in user has accessed a collaborate share
+ * link, via the record_share_access() RPC, which re-verifies the token
+ * resolves to a real collaborate share before logging anything -- so a
+ * caller can't log themselves against an arbitrary share_id they merely
+ * guessed.
  */
-export async function recordShareAccess(shareId: string): Promise<void> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) return;
-
-  const { error } = await supabase
-    .from("share_access")
-    .upsert(
-      { share_id: shareId, user_id: userId, last_accessed_at: new Date().toISOString() },
-      { onConflict: "share_id,user_id" }
-    );
-
+export async function recordShareAccess(token: string): Promise<void> {
+  const { error } = await supabase.rpc("record_share_access", { p_token: token });
   if (error) {
     console.error("recordShareAccess error:", error);
   }
 }
 
 /**
- * Toggles a plate on a collaborate-shared game. Requires the caller to be
- * authenticated — enforced by the "Authenticated users can edit plates on
- * collaborate-shared games" RLS policy. Stamps found_by with the editor's
- * own id so the owner can see who made each change.
+ * Toggles a plate on a collaborate-shared game via the
+ * set_shared_plate_found() RPC, which verifies inside the function that:
+ * the token resolves to a real share, that share is in collaborate mode,
+ * and the caller is authenticated -- all server-side, none of it relying
+ * on a client-trusted gameId the way the old direct-table-update version
+ * did.
  */
-export async function setSharedPlateFound(gameId: string, code: string, found: boolean): Promise<boolean> {
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id ?? null;
-
-  const { error } = await supabase
-    .from("game_plates")
-    .update({
-      found,
-      found_at: found ? new Date().toISOString() : null,
-      found_by: found ? userId : null,
-    })
-    .eq("game_id", gameId)
-    .eq("code", code);
+export async function setSharedPlateFound(token: string, code: string, found: boolean): Promise<boolean> {
+  const { error } = await supabase.rpc("set_shared_plate_found", {
+    p_token: token,
+    p_code: code,
+    p_found: found,
+  });
 
   if (error) {
     console.error("setSharedPlateFound error:", error);

@@ -30,7 +30,6 @@ export default function SharedGame() {
 
   const [game, setGame]         = useState<Game | null>(null);
   const [mode, setMode]         = useState<ShareMode | null>(null);
-  const [shareId, setShareId]   = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab]           = useState<RegionTab>("us");
   const [view, setView]         = useState<ViewMode>("grid");
@@ -46,7 +45,6 @@ export default function SharedGame() {
       if (!result) { setNotFound(true); return; }
       setGame(result.game);
       setMode(result.mode);
-      setShareId(result.shareId);
     });
     return () => { active = false; };
   }, [token]);
@@ -63,9 +61,9 @@ export default function SharedGame() {
   // Log that this user has opened the collaborate link, so the owner can
   // see who has access (and when) before deciding to revoke.
   useEffect(() => {
-    if (mode !== "collaborate" || !session || !shareId) return;
-    recordShareAccess(shareId);
-  }, [mode, session, shareId]);
+    if (mode !== "collaborate" || !session || !token) return;
+    recordShareAccess(token);
+  }, [mode, session, token]);
 
   // Bump the view counter for view-mode links. Fires once per load,
   // regardless of auth state — view links are meant to be frictionless,
@@ -78,7 +76,7 @@ export default function SharedGame() {
   const canEdit = mode === "collaborate" && Boolean(session);
 
   const updateFound = useCallback((code: string) => {
-    if (!canEdit) return;
+    if (!canEdit || !token) return;
     setGame((prev) => {
       if (!prev) return prev;
       const willBeFound = !prev.found.includes(code);
@@ -91,10 +89,10 @@ export default function SharedGame() {
       } else {
         delete nextFoundBy[code];
       }
-      setSharedPlateFound(prev.id, code, willBeFound);
+      setSharedPlateFound(token, code, willBeFound);
       return { ...prev, found: next, foundBy: nextFoundBy };
     });
-  }, [canEdit, session]);
+  }, [canEdit, session, token]);
 
   if (notFound) {
     return (
