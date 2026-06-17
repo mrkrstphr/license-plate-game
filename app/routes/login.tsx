@@ -85,7 +85,7 @@ export default function Login() {
                   Email
                 </label>
                 <input
-                  className="w-full rounded-xl px-3.5 py-3 text-[15px] outline-none transition-colors"
+                  className="w-full rounded-xl px-3.5 py-3 text-[16px] outline-none transition-colors"
                   style={inputStyle}
                   type="email"
                   placeholder="you@example.com"

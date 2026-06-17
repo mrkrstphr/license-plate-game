@@ -237,7 +237,7 @@ export default function SharedGame() {
         {view === "grid" && (
           <>
             <input
-              className="w-full rounded-xl px-4 py-3 text-[15px] outline-none mb-3.5 border"
+              className="w-full rounded-xl px-4 py-3 text-[16px] outline-none mb-3.5 border"
               style={{ background: "var(--bg-input)", borderColor: "var(--border)", color: "var(--text-primary)" }}
               placeholder={`Search ${tab === "us" ? "states" : "provinces"}…`}
               value={search}

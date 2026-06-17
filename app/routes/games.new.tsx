@@ -47,7 +47,7 @@ export default function NewGame() {
             <label className="block text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--text-muted)" }}>
               Trip Name
             </label>
-            <input className="w-full rounded-xl px-3.5 py-3 text-[15px] outline-none transition-colors"
+            <input className="w-full rounded-xl px-3.5 py-3 text-[16px] outline-none transition-colors"
               style={inputStyle}
               placeholder="e.g. Summer Road Trip 2025"
               value={name}
@@ -58,7 +58,7 @@ export default function NewGame() {
             <label className="block text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--text-muted)" }}>
               Date
             </label>
-            <input className="w-full rounded-xl px-3.5 py-3 text-[15px] outline-none transition-colors"
+            <input className="w-full rounded-xl px-3.5 py-3 text-[16px] outline-none transition-colors"
               style={inputStyle}
               type="date" value={date}
               onChange={(e) => { setDate(e.target.value); setError(""); }} />
