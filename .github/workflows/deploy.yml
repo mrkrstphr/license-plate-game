@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/supabase-sync   # TODO: remove this branch from triggers before merging to main
 
 permissions:
   contents: read
