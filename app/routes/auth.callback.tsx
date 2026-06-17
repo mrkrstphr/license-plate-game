@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import type { Route } from "./+types/auth.callback";
 import { supabase } from "~/lib/supabase";
 import { TopBar } from "~/components/ui/top-bar";
@@ -10,11 +10,28 @@ export function meta({}: Route.MetaArgs) {
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // Supabase's client automatically parses the URL hash/query and
-    // establishes the session; we just need to wait for it then redirect.
+    const code = searchParams.get("code");
+
+    if (code) {
+      // Modern Supabase magic links use PKCE: a `code` query param that
+      // must be explicitly exchanged for a session. The code verifier
+      // was stored in localStorage when signInWithOtp() was called.
+      supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
+        if (exchangeError) {
+          setError(exchangeError.message);
+          return;
+        }
+        navigate("/", { replace: true });
+      });
+      return;
+    }
+
+    // Fallback: older-style implicit grant with #access_token in the hash.
+    // Supabase's client auto-detects this on construction if present.
     supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (sessionError) {
         setError(sessionError.message);
@@ -23,14 +40,10 @@ export default function AuthCallback() {
       if (data.session) {
         navigate("/", { replace: true });
       } else {
-        // Give the client a moment to process the URL fragment on first load
-        const sub = supabase.auth.onAuthStateChange((_event, session) => {
-          if (session) navigate("/", { replace: true });
-        });
-        return () => sub.data.subscription.unsubscribe();
+        setError("No sign-in code found in the link. It may have expired — try requesting a new one.");
       }
     });
-  }, [navigate]);
+  }, [searchParams, navigate]);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-app)" }}>
