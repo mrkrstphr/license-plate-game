@@ -17,9 +17,8 @@ export default function AuthCallback() {
     const code = searchParams.get("code");
 
     if (code) {
-      // Modern Supabase magic links use PKCE: a `code` query param that
-      // must be explicitly exchanged for a session. The code verifier
-      // was stored in localStorage when signInWithOtp() was called.
+      // PKCE flow: a `code` query param that must be explicitly exchanged
+      // for a session using the verifier stored in localStorage.
       supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
         if (exchangeError) {
           setError(exchangeError.message);
@@ -30,8 +29,32 @@ export default function AuthCallback() {
       return;
     }
 
-    // Fallback: older-style implicit grant with #access_token in the hash.
-    // Supabase's client auto-detects this on construction if present.
+    // Implicit grant flow: tokens arrive directly in the URL hash fragment
+    // (#access_token=...&refresh_token=...). Supabase's client only
+    // auto-detects this hash once, at construction time — but our GitHub
+    // Pages SPA redirect (404.html -> sessionStorage -> history.replaceState)
+    // restores the URL *after* the client module has already run, so the
+    // hash is invisible to that auto-detection. We parse it ourselves here.
+    const hash = window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+    const hashParams = new URLSearchParams(hash);
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
+
+    if (accessToken && refreshToken) {
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error: setSessionError }) => {
+          if (setSessionError) {
+            setError(setSessionError.message);
+            return;
+          }
+          navigate("/", { replace: true });
+        });
+      return;
+    }
+
+    // Last resort: maybe a session already exists somehow
     supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (sessionError) {
         setError(sessionError.message);
